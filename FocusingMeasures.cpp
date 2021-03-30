@@ -8,10 +8,11 @@
 #include "opencv2/imgproc.hpp"
 #include <opencv2/core/types.hpp>
 #include <algorithm> 
-#include<stdlib.h>
-#include<time.h>
+#include <stdlib.h>
+#include <time.h>
 #include <random>
 #include <iomanip>
+#include <unistd.h>
 
 
 using namespace cv;
@@ -25,6 +26,7 @@ default_random_engine eng(rd());
 uniform_real_distribution<float> distr(FLOAT_MIN, FLOAT_MAX);
 String image_path;
 String file;
+const String outDir = "Outputs/";
 
 Mat cambia(Mat M)//Imagen Negativa.
 {
@@ -70,7 +72,11 @@ Mat gradienteMax(Mat image){
    }
 
    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("GMAX-"+file,outImage);
+
+
+   
+
+   imwrite("Outputs/GMAX-"+file,outImage);
    return output;
 }
 
@@ -88,7 +94,7 @@ double robertsGradient(Mat image){
    }
 
    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("RobertsG-"+file,outImage);
+   imwrite("Outputs/RobertsG-"+file,outImage);
    return value;
 }
 
@@ -110,7 +116,7 @@ double tenengrad(Mat image){
       }
    }
    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("tenengrad-"+file,outImage);
+   imwrite("Outputs/tenengrad-"+file,outImage);
    return value;
 }
 
@@ -126,7 +132,7 @@ double brennerGradient(Mat image){
       }
    }
    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("brennerGradient-"+file,outImage);
+   imwrite("Outputs/brennerGradient-"+file,outImage);
    return value;
 }
 
@@ -152,7 +158,7 @@ double variance(Mat image){
    }
    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
    //outImage = cambia(outImage);
-   imwrite("variance-"+file,outImage);
+   imwrite("Outputs/variance-"+file,outImage);
    return value;
 }
 double TSobel(Mat image, double alpha)
@@ -194,7 +200,7 @@ double TSobel(Mat image, double alpha)
       }
    }
    normalize(Tw_image,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("tw"+file,outImage);
+   imwrite("Outputs/tw"+file,outImage);
    return tw_value;
 
    
@@ -232,7 +238,6 @@ Mat noiseSaltAndPepper(Mat image, double prob){
 
 int main( void )
 {
-
 int t = 0;
 String dataFiles = "myFile.txt";
 ifstream infile(dataFiles); 
@@ -241,10 +246,11 @@ String measureValues2 = "tSobelConRuido.res";
 ofstream outfile(measureValues);
 ofstream outfile2(measureValues2);
 Mat image;
+cout<<"Procesando imágenes: "<<endl;
 while (getline(infile,file)){
    istringstream iss(file);
    //names[t]= file;
-   image_path = "720x480/" + file;
+   image_path = "Input/" + file;
    Mat image2 = imread(image_path, IMREAD_GRAYSCALE);
 
    //image = noiseSaltAndPepper(image2,0.001);
@@ -258,8 +264,11 @@ while (getline(infile,file)){
    <<variance(image)<<endl;
    outfile2<<TSobel(image,0.1)<<"\t"<<TSobel(image,0.2)<<"\t"<<TSobel(image,0.3)<<"\t"<<TSobel(image,0.4)
    <<"\t"<<TSobel(image,0.6)<<"\t"<<TSobel(image,0.8)<<"\t"<<TSobel(image,1)<<endl;
+
+   cout<<"Secuencia: "<<t<<endl;
    t++;
 }
+cout<<"Terminado"<<endl;
 infile.close();
 outfile.close();
 return 0;
