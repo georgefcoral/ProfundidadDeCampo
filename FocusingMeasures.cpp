@@ -71,7 +71,7 @@ Mat gradienteMax(Mat image){
       }
    }
 
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
 
 
    
@@ -93,7 +93,7 @@ double robertsGradient(Mat image){
       }
    }
 
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+  // normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
    imwrite("Outputs/RobertsG-"+file,outImage);
    return value;
 }
@@ -115,7 +115,7 @@ double tenengrad(Mat image){
          value = value + pow(temp1.at<uchar>(i,j),2) + pow(temp2.at<uchar>(i,j),2);
       }
    }
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
    imwrite("Outputs/tenengrad-"+file,outImage);
    return value;
 }
@@ -131,7 +131,7 @@ double brennerGradient(Mat image){
 
       }
    }
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
    imwrite("Outputs/brennerGradient-"+file,outImage);
    return value;
 }
@@ -156,7 +156,7 @@ double variance(Mat image){
          value = value + pow(image.at<uchar>(i,j)-mean,2);
       }
    }
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
    //outImage = cambia(outImage);
    imwrite("Outputs/variance-"+file,outImage);
    return value;
@@ -199,8 +199,8 @@ double TSobel(Mat image, double alpha)
          tw_value = tw_value +(Tw_image.at<uchar>(i,j))*(Tw_image.at<uchar>(i,j));
       }
    }
-   normalize(Tw_image,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("Outputs/tw"+file,outImage);
+   //normalize(Tw_image,outImage,0,255,NORM_MINMAX,-1,noArray());
+   imwrite("Outputs/tw"+file,Tw_image);
    return tw_value;
 
    
@@ -257,13 +257,10 @@ while (getline(infile,file)){
    image = image2.clone();
    //imshow("Frame",image );
    //waitKey(0);
-   outfile<<TSobel(image,0.4)<<"\t"
-   <<robertsGradient(image)<<"\t"
-   <<tenengrad(image)<<"\t"
-   <<brennerGradient(image)<<"\t"
-   <<variance(image)<<endl;
-   outfile2<<TSobel(image,0.1)<<"\t"<<TSobel(image,0.2)<<"\t"<<TSobel(image,0.3)<<"\t"<<TSobel(image,0.4)
-   <<"\t"<<TSobel(image,0.6)<<"\t"<<TSobel(image,0.8)<<"\t"<<TSobel(image,1)<<endl;
+   outfile<<TSobel(image,0.4)<<"\t"<<robertsGradient(image)<<"\t"<<tenengrad(image)<<"\t"<<brennerGradient(image)<<"\t"<<variance(image)<<endl;
+
+   /*outfile2<<TSobel(image,0.1)<<"\t"<<TSobel(image,0.2)<<"\t"<<TSobel(image,0.3)<<"\t"<<TSobel(image,0.4)
+   <<"\t"<<TSobel(image,0.6)<<"\t"<<TSobel(image,0.8)<<"\t"<<TSobel(image,1)<<endl;*/
 
    cout<<"Secuencia: "<<t<<endl;
    t++;
