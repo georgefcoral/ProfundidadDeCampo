@@ -42,9 +42,9 @@ double variance(Mat input)
     	}
     }
     //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-    imwrite("variance"+lectura,outImage);
+    imwrite("Outputs/Subbarao_variance"+lectura,outImage);
     //cout<<outImage<<endl;
-    //cout<<var<<endl;
+    cout<<"Varianza: "<<var<<endl;
     return var;
 }
 
@@ -65,8 +65,8 @@ double energyG(Mat input){
     		outImage.at<double>(i,j) = (gx.at<double>(i,j)*gx.at<double>(i,j)) +(gy.at<double>(i,j)*gy.at<double>(i,j));
     	}
     }
-    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-    imwrite("energyG-"+lectura,outImage);
+    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    imwrite("Outputs/energyG-"+lectura,outImage);
     cout<<"EnergyG = "<<var<<endl;
 	return var;
 }
@@ -88,8 +88,8 @@ double energyL(Mat input)
     		outImage.at<double>(i,j) = laplacianEImage.at<double>(i,j)*laplacianEImage.at<double>(i,j);
     	}
     }
-    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-    imwrite("energyL-"+lectura,outImage);
+    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    imwrite("Outputs/energyL-"+lectura,outImage);
     cout<<"EnergyL = "<<var<<endl;
     return var;
 
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
    
     
     while (getline(myFile, lectura)) {
-	String image_path = "720x480/" + lectura;
+	String image_path = "Input/" + lectura;
     //String image_path = "fondoEnfoco.jpg";
 	input = imread(image_path, IMREAD_GRAYSCALE);
     
@@ -284,9 +284,9 @@ for(int i=0; i<N; i++){
 	double M1 = variance(input);
 	double M2 = energyG(input);
 	double M3 = energyL(input);
-	double M4 = variance(DFTI);
-	double M5 = energyG(DFTI);
-	double M6 = energyL(DFTI);
+	//double M4 = variance(DFTI);
+	//double M5 = energyG(DFTI);
+	//double M6 = energyL(DFTI);
 	//measure << M1 << "\t" << M2 << "\t" << M3 << "\t" << M4 << "\t" << M5 << "\t" << M6 <<endl;
 
 	count++;
@@ -294,11 +294,11 @@ for(int i=0; i<N; i++){
 	
 	
 	
-	namedWindow("Imagen original", 1);
-	imshow("Imagen original", input);
-	namedWindow("Output", 1);
-	imshow("Output", gray);
-	waitKey(0);
+	//namedWindow("Imagen original", 1);
+	//imshow("Imagen original", input);
+	//namedWindow("Output", 1);
+	//imshow("Output", gray);
+	waitKey(500);
 	if (waitKeyEx(30) > 0)
         break;
     
