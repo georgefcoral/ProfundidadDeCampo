@@ -161,10 +161,11 @@ if (argc < 2)
     cerr << "Imagen de entrada." << endl << endl;
     exit(1);
     }
+
 int t = 0;
 String file;
 dir = argv[1];//Dirección de imagenes 
-String dataFiles =dir+"myFile.txt";
+String dataFiles ="myFile.txt";
 cout<<dataFiles;
 ifstream infile(dataFiles);
 while (getline(infile,file)){
