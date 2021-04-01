@@ -13,5 +13,7 @@ rm myFile.txt
 ls "$1">>myFile.txt
 echo "Lista de imagenes preparadas."
 cat myFile.txt
+echo "Total de archivos a procesar: "
+wc -l myFile.txt
 make
-./ejecutable
+./ejecutable "$1"
