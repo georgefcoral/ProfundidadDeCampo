@@ -1,0 +1,13 @@
+En el presente repositorio se encuentra:
+	-FocusingMeasures.cpp
+	-FocusingMeasuresFourier.cpp
+	-FocusingMeasures2.cpp
+	-Piramide.cpp
+
+Para los primeros dos: 
+	-Modificar el archivo "Makefile" con el nombre respectivo 
+	al programa a ejecutar.
+	-Ejecutar el archivo run.sh con los parámetros de origen de 
+	imágenes de entrada y destino de imágenes de salida [directorios].
+	-Abrir el directorio destino para ver los resultados.
+
