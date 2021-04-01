@@ -14,11 +14,11 @@
 using namespace cv;
 using namespace std;
 
-const int alpha_slider_max = 27;
+int alpha_slider_max ;
 int alpha_slider;
 double alpha;
 double beta;
-String names[alpha_slider_max];
+String *names;
 int IM_WIDTH;
 int IM_HEIGHT;
 String dir;
@@ -161,11 +161,15 @@ if (argc < 2)
     cerr << "Imagen de entrada." << endl << endl;
     exit(1);
     }
-
+cout<<"Proporcione el total de secuencias en el directorio de entrada"<<endl;
+cin>>alpha_slider_max;
+names = new String[alpha_slider_max];
 int t = 0;
 String file;
 dir = argv[1];//Dirección de imagenes 
-String dataFiles ="myFile.txt";
+
+String dataFiles = "myFile.txt";
+
 cout<<dataFiles;
 ifstream infile(dataFiles);
 while (getline(infile,file)){
@@ -175,7 +179,7 @@ while (getline(infile,file)){
    t++;
 }
 infile.close();
-cout<<t<<endl;
+//cout<<t<<endl;
 
 alpha_slider = 0;
 namedWindow("Frame", WINDOW_NORMAL); // Create Window
@@ -186,7 +190,7 @@ sprintf( TrackbarName, "Frame max %d", alpha_slider_max );
 createTrackbar( TrackbarName, "Frame", &alpha_slider, alpha_slider_max-1, on_trackbar );
 on_trackbar( alpha_slider, 0 );
 waitKey(0);
-   
+delete [] names;
 destroyAllWindows();
 return 0;
 }
