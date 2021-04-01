@@ -44,6 +44,7 @@ double variance(Mat input)
     //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
     imwrite("Outputs/Subbarao_variance"+lectura,outImage);
     //cout<<outImage<<endl;
+
     cout<<"Varianza: "<<var<<endl;
     return var;
 }
@@ -142,15 +143,16 @@ int main(int argc, char **argv)
    
     
     while (getline(myFile, lectura)) {
-	String image_path = "Input/" + lectura;
+	String image_path = string(argv[1]) + "/"+lectura;
     //String image_path = "fondoEnfoco.jpg";
+    cout<<image_path<<endl;
 	input = imread(image_path, IMREAD_GRAYSCALE);
     
    // cout<<"Matri con distribución gaussiana"<<endl<<matrizGaussiana<<endl;
-	copyMakeBorder(input, input, int ((input.cols - input.rows) / 2),
-		       int ((input.cols - input.rows) / 2), 0, 0, BORDER_CONSTANT, 0);
+	copyMakeBorder(input, input, int ((input.cols - input.rows) / 2),int ((input.cols - input.rows) / 2), 0, 0, BORDER_CONSTANT, 0);
 	//int umbral = stoi(argv[1]);
-	Mat gaussianKernel = getGaussianKernel(input.rows,5,CV_64F);
+	cout<<input.rows<<endl;
+	Mat gaussianKernel = getGaussianKernel(input.rows,0.1,CV_64F);
     Mat matrizGaussiana = gaussianKernel*gaussianKernel.t();
 	//Para imagen de entrada.
 	fftw_complex *complex_in, *complex_out;
@@ -178,17 +180,13 @@ int main(int argc, char **argv)
 	    for (int j = 0; j < M; j++) {
 		complex_in[i * M + j][0] = input.at < uchar > (i, j);
 		complex_in2[i * M + j][0] = matrizGaussiana.at < double > (i, j);
-		//cout<<complex_in2[i*N+j][0]<<"   +  "<<complex_in2[i*N+j][1]<<" j\t"<<endl;
 	    }
-	    //cout<<endl;
 	}
 
-	p = fftw_plan_dft_2d(N, M, complex_in, complex_out, FFTW_FORWARD,
-			     FFTW_ESTIMATE);
+	p = fftw_plan_dft_2d(N, M, complex_in, complex_out, FFTW_FORWARD,FFTW_ESTIMATE);
 	fftw_execute(p);
 
-	p2 = fftw_plan_dft_2d(N, M, complex_in2, complex_out2, FFTW_FORWARD,
-			     FFTW_ESTIMATE);
+	p2 = fftw_plan_dft_2d(N, M, complex_in2, complex_out2, FFTW_FORWARD,FFTW_ESTIMATE);
 	fftw_execute(p2);
 /*for (int i = 0; i < N; i++) {
 	for (int j = 0; j < M; j++) {
@@ -281,12 +279,9 @@ for(int i=0; i<N; i++){
 	DFTI.convertTo(gray, CV_8UC1);
 //gray es imagen filtrada.
 //Aplicar medidas de enfoque a gray
-	double M1 = variance(input);
-	double M2 = energyG(input);
-	double M3 = energyL(input);
-	//double M4 = variance(DFTI);
-	//double M5 = energyG(DFTI);
-	//double M6 = energyL(DFTI);
+	double M4 = variance(DFTI);
+	double M5 = energyG(DFTI);
+	double M6 = energyL(DFTI);
 	//measure << M1 << "\t" << M2 << "\t" << M3 << "\t" << M4 << "\t" << M5 << "\t" << M6 <<endl;
 
 	count++;
@@ -294,15 +289,15 @@ for(int i=0; i<N; i++){
 	
 	
 	
-	//namedWindow("Imagen original", 1);
-	//imshow("Imagen original", input);
-	//namedWindow("Output", 1);
-	//imshow("Output", gray);
+	namedWindow("Imagen original", 1);
+	imshow("Imagen original", input);
+	namedWindow("Output", 1);
+	imshow("Output", gray);
 	waitKey(500);
 	if (waitKeyEx(30) > 0)
         break;
     
-    
+
 
    }
     measure.close();
