@@ -38,10 +38,10 @@ double variance(Mat input)
     	for(int j=0;j<input.cols;j++){
     		int pixelVal=input.at<uchar>(i,j);
     		var=var+((pixelVal*pixelVal)-(meanInput*meanInput));
-    		outImage.at<double>(i,j) = ((pixelVal*pixelVal)-(meanInput*meanInput));
+    		outImage.at<double>(i,j) = ((pixelVal*pixelVal)-(meanInput*meanInput))/(totalSize);
     	}
     }
-    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
     imwrite("Outputs/Subbarao_variance"+lectura,outImage);
     //cout<<outImage<<endl;
     cout<<"Varianza: "<<var<<endl;
