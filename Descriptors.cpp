@@ -65,7 +65,13 @@ while (getline(infile,file)){
    istringstream iss(file);
    cout<<file<<endl;
    image_path = "Outputs/" + file;
+
    Mat image = imread(image_path, IMREAD_GRAYSCALE);
+   if(! image.data ) {
+    cout <<  "Could not open or find the image" << std::endl ;
+    return -1;
+    }
+
 
    Mat element = getStructuringElement( dilation_type,
                                        Size( 2*dilation_size + 1, 2*dilation_size+1 ),
@@ -76,12 +82,14 @@ while (getline(infile,file)){
    findContours( image, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE );//Para HU Moments
 
    /*Fourier Descriptors*/
+   cout<<"Aqui:1"<<endl;
    Mat contoursFourier = image.clone();
    FD.setContours(contoursFourier);
    FD.computeDescriptor();
-
+   cout<<"Aqui:2"<<endl;
    nDesc = contours.size();
    reconError = FD.reconstructContour(nDesc);
+   cout<<"Aqui:3"<<endl;
    Mat imContours;
    plotContours(contoursFourier, imContours, FD);
    namedWindow( "Output", 1 );
@@ -127,6 +135,8 @@ while (getline(infile,file)){
 
    cout<<"Secuencia: "<<t<<" con : "<<contours.size()<<" objetos."<<endl;
    t++;
+   complexContour();
+
 }
 cout<<"Terminado"<<endl;
 infile.close();
