@@ -76,7 +76,7 @@ Mat gradienteMax(Mat image){
 
    
 
-   imwrite("Outputs/GMAX-"+file,outImage);
+   //imwrite("Outputs/GMAX-"+file,outImage);
    return output;
 }
 
@@ -151,13 +151,13 @@ double variance(Mat image){
 
    for(int i=0; i<image.rows; i++){
       for(int j = 0; j<image.cols; j++){
-		 outImage.at<double>(i,j) = pow(image.at<uchar>(i,j)-mean,2);
+		 outImage.at<double>(i,j) = pow(image.at<uchar>(i,j)-mean,2)/((image.cols)*(image.rows));
       	 //outImage.at<double>(i,j) = pow(image.at<uchar>(i,j),2) - pow(mean,2);
          value = value + pow(image.at<uchar>(i,j)-mean,2);
       }
    }
-   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   //outImage = cambia(outImage);
+   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   outImage = cambia(outImage);
    imwrite("Outputs/variance-"+file,outImage);
    return value;
 }
@@ -190,7 +190,7 @@ double TSobel(Mat image, double alpha)
             + (image.at<uchar>(i,j+1)-media)*(image.at<uchar>(i,j+1)-media) 
             + (image.at<uchar>(i+1,j+1)-media)*(image.at<uchar>(i+1,j+1)-media))/9.0;
 
-         if( varianza > threshold_value){
+         if( varianza >= threshold_value){
             Tw_image.at<double>(i,j) = g_image.at<double>(i,j);
          }else{
             Tw_image.at<double>(i,j) = 0;
@@ -199,6 +199,8 @@ double TSobel(Mat image, double alpha)
          tw_value = tw_value +(Tw_image.at<uchar>(i,j))*(Tw_image.at<uchar>(i,j));
       }
    }
+
+   threshold( Tw_image, Tw_image, 20, 255, 0);
    //normalize(Tw_image,outImage,0,255,NORM_MINMAX,-1,noArray());
    imwrite("Outputs/tw"+file,Tw_image);
    return tw_value;
@@ -236,8 +238,14 @@ Mat noiseSaltAndPepper(Mat image, double prob){
 }
 
 
-int main( void )
+int main(int argc, char **argv)
 {
+   if (argc < 2)
+   {
+       cerr << "Faltan Parámetros:\n\n\tUso: ./ejecutableFocusingMeasures path_images \n\n";
+       cerr << endl; 
+      exit (1);
+    }
 int t = 0;
 String dataFiles = "myFile.txt";
 ifstream infile(dataFiles); 
@@ -250,18 +258,18 @@ cout<<"Procesando imágenes: "<<endl;
 while (getline(infile,file)){
    istringstream iss(file);
    //names[t]= file;
-   image_path = "Input/" + file;
+   image_path = string(argv[1])+"/" + file;
+   double valorDeUmbral = atoi(argv[2]);
    Mat image2 = imread(image_path, IMREAD_GRAYSCALE);
 
-   //image = noiseSaltAndPepper(image2,0.001);
+   //image = noiseSaltAndPepper(image2,0.001);  
    image = image2.clone();
    //imshow("Frame",image );
    //waitKey(0);
-   outfile<<TSobel(image,0.4)<<"\t"<<robertsGradient(image)<<"\t"<<tenengrad(image)<<"\t"<<brennerGradient(image)<<"\t"<<variance(image)<<endl;
-
+   //outfile<<TSobel(image,0.4)<<"\t"<<robertsGradient(image)<<"\t"<<tenengrad(image)<<"\t"<<brennerGradient(image)<<"\t"<<variance(image)<<endl;
+   double testing = TSobel(image,0.2);
    /*outfile2<<TSobel(image,0.1)<<"\t"<<TSobel(image,0.2)<<"\t"<<TSobel(image,0.3)<<"\t"<<TSobel(image,0.4)
    <<"\t"<<TSobel(image,0.6)<<"\t"<<TSobel(image,0.8)<<"\t"<<TSobel(image,1)<<endl;*/
-
    cout<<"Secuencia: "<<t<<endl;
    t++;
 }
