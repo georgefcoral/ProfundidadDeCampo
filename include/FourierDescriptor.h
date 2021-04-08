@@ -43,8 +43,8 @@ struct FourierDescriptor
 
    void setContours(const cv::Mat &frame, cv::Point2f Center);
    void setContours(const cv::Mat &frame);
-   void computeDescriptor();
-   double reconstructContour (unsigned int nDesc);
+   void computeDescriptors();
+   double reconstructContours (double pDesc);
    void findContourLimits(int &xmin, int &xmax,int  &ymin, int &ymax);
    void translateContour(int dx, int dy, contourKind cK);
 

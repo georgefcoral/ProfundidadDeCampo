@@ -1,5 +1,6 @@
 # Prerequisites
 *.d
+*~
 
 ejecutable
 
@@ -32,3 +33,4 @@ ejecutable
 *.exe
 *.out
 *.app
+myFile.txt

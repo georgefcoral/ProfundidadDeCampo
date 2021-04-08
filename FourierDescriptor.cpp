@@ -254,11 +254,11 @@ void FourierDescriptor::setContours(const cv::Mat &frame)
    unsigned int i;
 
    cv::findContours(frame, contourIn, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+   Descriptor.clear();
    for (i = 0; i < contourIn.size();++i)
    {
       unsigned int contourLength;
       
-      Descriptor.clear();
       contourLength = contourIn[i].size();
       if (contourLength)
       {
@@ -290,7 +290,7 @@ void FourierDescriptor::setContours(const cv::Mat &frame)
    }
 }
 
-void FourierDescriptor::computeDescriptor()
+void FourierDescriptor::computeDescriptors()
 {
    unsigned int i;
 
@@ -314,12 +314,21 @@ void FourierDescriptor::computeDescriptor()
    }
 }
 
-double FourierDescriptor::reconstructContour (unsigned int nDesc)
+double FourierDescriptor::reconstructContours (double pDesc)
 {
    unsigned int i, tope, cont;
    std::vector<complexContour>::iterator itD, endD;
    std::vector< std::vector<cv::Point> >::iterator itCO, itCI;
    double error;
+   unsigned int nDesc;
+
+   if (pDesc <= 0. || pDesc > 1.)
+   {
+   std::cerr << "Error en FourierDescriptor::reconstructContours - "
+           << " the parameter pDesc should be in the interval (0,1]"
+           << std::endl;
+      return -1.;
+   }
 
 
    if (contourOut.size() != contourIn.size())
@@ -338,6 +347,8 @@ double FourierDescriptor::reconstructContour (unsigned int nDesc)
    for (; itD != endD;++itD, ++itCO, ++itCI)
    {
       fftw_plan plan;
+   
+      nDesc = (unsigned int)rint(itD->N * pDesc);
 
       if (itCO->size() != itD->N)
       {

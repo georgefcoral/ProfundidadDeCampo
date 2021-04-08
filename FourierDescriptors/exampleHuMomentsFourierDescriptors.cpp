@@ -8,19 +8,19 @@ int main(int argc, char **argv)
 {
 	Mat frame, rgbFrame, output, imContours;
    FourierDescriptor FD;
-	unsigned nDesc = 0;
+	double pDesc = 0.;
 	double reconError;
 
 	if (argc < 2)
 	{
-	    cerr << "Faltan Parámetros:\n\n\tUso: exampleHuMomentsFourierDescriptors <Nombre_de_la_imagen>  [nDescriptores]\n\n";
+	    cerr << "Faltan Parámetros:\n\n\tUso: exampleHuMomentsFourierDescriptors <Nombre_de_la_imagen>  [pDescriptores]\n\n";
 	    cerr << "El proceso aplica primero realiza una umbralización de la imágen para posteriormente..." << endl << endl; 
 		exit (1);
     }
 
     frame = imread(argv[1], 0);
     if (argc>2)
-        nDesc = atoi(argv[2]);
+        pDesc = atof(argv[2]);
 
     Mosaic M(Size(frame.cols, frame.rows), 1, 2, 8, 8, CV_8UC3);
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     threshold(frame, output, 0, 255, THRESH_BINARY_INV | THRESH_OTSU);
 
     FD.setContours(output);
-    FD.computeDescriptor();
+    FD.computeDescriptors();
 
     //Aprovechamos que el objeto FD ya tiene encontró los contornos en la imagen, y los reusamos para calcular los momentos de Hu.
     {
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
       cout << endl;
     }
 
-    reconError = FD.reconstructContour(nDesc);
+    reconError = FD.reconstructContours(pDesc);
     cout << "El tamaño del contorno número " << 0 << " es igual a "
              << FD.contourOut[0].size() << " y el error de reconstruccion es " 
              << reconError << endl;
