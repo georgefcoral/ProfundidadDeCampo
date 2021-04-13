@@ -16,4 +16,3 @@ cat myFile.txt
 echo "Total de archivos a procesar: "
 wc -l myFile.txt
 make
-./ejecutable "$1"
