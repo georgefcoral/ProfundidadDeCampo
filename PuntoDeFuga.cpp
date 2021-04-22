@@ -203,7 +203,7 @@ int main (void)
          HuRespawn.pop_back();
          vector <Point2f> correspondences = findCorrespondences(huMomentsMat, HuRespawn,mc,mcRespawn,contours.size(),contornoSizeRespawn);
          cout<<correspondences<<endl;
-         //pointMat= imContours.clone();
+         pointMat= imContours.clone();
          //Punto de Fuga 
 
          for(unsigned int i=0; i<correspondences.size(); i++){
