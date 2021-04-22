@@ -40,10 +40,10 @@ Mat cambia (Mat M)              //Imagen Negativa.
 }
 
 
-vector<Point3f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Point2f> mc_new,vector<Point2f>mc_old,int SizeNew,int SizeOld){
+vector<Point2f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Point2f> mc_new,vector<Point2f>mc_old,int SizeNew,int SizeOld){
    int index1=0;
    int index2=0;
-   vector<Point3f>correspondences;//[SizeOld];
+   vector<Point2f>correspondences;//[SizeOld];
    double valor_min=0;
    for(int i=0; i<SizeOld; i++){
       for(int j=0; j<SizeNew; j++){
@@ -68,7 +68,7 @@ vector<Point3f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Poi
          }
 
       }
-      correspondences.push_back(Point3f(index1,index2,valor_min));
+      correspondences.push_back(Point2f(index1,index2));
       index1 = 0;
       index2 = 0;
    }
@@ -77,6 +77,8 @@ vector<Point3f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Poi
    return correspondences;
 
 }
+
+
 
 int main (void)
 {
@@ -102,6 +104,8 @@ int main (void)
 
 
    cout << "Finding descriptors... " << endl;
+   namedWindow ("Output", 1);
+   Mat pointMat(1000,1500,CV_8UC3,Scalar(0,0,0));
 
    while (getline (infile, file))
    {
@@ -140,11 +144,7 @@ int main (void)
          reconError = FD.reconstructContours (0.01);
          plotContours (contoursFourier, imContours, FD);
       }
-      namedWindow ("Output", 1);
-      imshow ("Output", imContours);
-      waitKey (0);
-      if (waitKeyEx (30) > 0)
-         break;
+
    
       Mat drawing = Mat::zeros (image.size (), CV_8UC3);
       //drawing contours.
@@ -201,8 +201,28 @@ int main (void)
          HuRespawn = tempMatHU.back();
          //cout<<mcRespawn[0].x<<endl;
          HuRespawn.pop_back();
-         vector <Point3f> correspondences = findCorrespondences(huMomentsMat, HuRespawn,mc,mcRespawn,contours.size(),contornoSizeRespawn);
+         vector <Point2f> correspondences = findCorrespondences(huMomentsMat, HuRespawn,mc,mcRespawn,contours.size(),contornoSizeRespawn);
          cout<<correspondences<<endl;
+         //pointMat= imContours.clone();
+         //Punto de Fuga 
+
+         for(unsigned int i=0; i<correspondences.size(); i++){
+           // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
+           Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256), rng.uniform (0, 256));
+            line(pointMat,Point2i(mcRespawn[correspondences[i].x]),Point2i(mc[correspondences[i].y]),color,2,LINE_8);
+         }
+
+        // cout<<imContours.type()<<endl;
+
+
+         
+         imshow ("Output", pointMat);
+         waitKey (0);
+         if (waitKeyEx (30) > 0)
+            break;
+
+         //finaliza punto de fuga.
+
          contornoSize.push_back(contours.size());
          frame_mc.push_back(mc);
          tempMatHU.push_back(huMomentsMat);
