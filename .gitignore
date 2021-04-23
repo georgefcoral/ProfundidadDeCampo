@@ -2,6 +2,8 @@
 *.d
 *~
 
+ejecutableDescriptors
+
 ejecutable
 
 # Compiled Object files

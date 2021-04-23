@@ -23,7 +23,6 @@ using namespace std;
 
 String image_path;
 String file;
-const String outDir = "Results/";
 RNG rng (12345);
 Mat cambia (Mat M)              //Imagen Negativa.
 {
@@ -40,35 +39,52 @@ Mat cambia (Mat M)              //Imagen Negativa.
 }
 
 
-vector<Point2f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Point2f> mc_new,vector<Point2f>mc_old,int SizeNew,int SizeOld){
-   int index1=0;
-   int index2=0;
-   vector<Point2f>correspondences;//[SizeOld];
-   double valor_min=0;
-   for(int i=0; i<SizeOld; i++){
-      for(int j=0; j<SizeNew; j++){
-            double distance=0;
-            for(int k=0; k<7; k++){
-               //Distancia Euclideana entre cada fila de momentos de HU.
-               distance = distance + (huMomentNew.at<double>(j,k)-HuMomentsOld.at<double>(i,k))*(huMomentNew.at<double>(j,k)-HuMomentsOld.at<double>(i,k));
-            }
-            //Incorporamos a la distancia euclideana los centro de masa.
-            distance = distance + (mc_new[j].x-mc_old[i].x)*(mc_new[j].x-mc_old[i].x);
-            distance = distance + (mc_new[j].y-mc_old[i].y)*(mc_new[j].y-mc_old[i].y);
-            distance = sqrt(distance);//Distancia entre objeto i - j
-            if(j==0){valor_min = distance;continue;}else{
-            if(distance<valor_min){
-               valor_min=distance;
+vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
+                                        vector < Point2f > mc_new,
+                                        vector < Point2f > mc_old,
+                                        int SizeNew, int SizeOld)
+{
+   int index1 = 0;
+   int index2 = 0;
+   vector < Point2f > correspondences; //[SizeOld];
+   double valor_min = 0;
+   for (int i = 0; i < SizeOld; i++)
+   {
+      for (int j = 0; j < SizeNew; j++)
+      {
+         double distance = 0;
+         for (int k = 0; k < 7; k++)
+         {
+            //Distancia Euclideana entre cada fila de momentos de HU.
+            distance =
+               distance + (huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k)) *(huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k));
+         }
+         //Incorporamos a la distancia euclideana los centro de masa.
+         distance = distance + (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x); distance = distance + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
+         distance = sqrt (distance);   //Distancia entre objeto i - j
+         if (j == 0)
+         {
+            valor_min = distance;
+            continue;
+         }
+         else
+         {
+            if (distance < valor_min)
+            {
+               valor_min = distance;
                index1 = i;
                index2 = j;
-               cout<<"Distancia "<<i<<" -- "<<j<<"  = "<<distance<<endl;
-            }else{
+               cout << "Distancia " << i << " -- " << j << "  = " << distance
+                  << endl;
+            }
+            else
+            {
                continue;
             }
          }
 
       }
-      correspondences.push_back(Point2f(index1,index2));
+      correspondences.push_back (Point2f (index1, index2));
       index1 = 0;
       index2 = 0;
    }
@@ -80,38 +96,57 @@ vector<Point2f> findCorrespondences(Mat huMomentNew, Mat HuMomentsOld,vector<Poi
 
 
 
-int main (void)
+int main (int argc, char **argv)
 {
    int t = 0;
    int dilation_type = 2;
    int dilation_size = 5;
+   bool Umbraliza = true;
 
-   String dataFiles = "myFile.txt";
-   ifstream infile (dataFiles);
+   String dataFiles, OutDir;
+   ifstream infile;
    Mat image;
    vector < vector < Point > >contours;
    vector < Vec4i > hierarchy;
 /*FOURIER DESCRIPTORS VARIABLES*/
-   
+
    unsigned int nDesc = 0;
    double reconError;
-   vector<vector<Point2f>> frame_mc(100);
-   vector<vector<Mat>> frame_HU(100);
-   vector<Mat> tempMatHU(100);
-   vector <int> contornoSize;
-   
+   vector < vector < Point2f >> frame_mc (100);
+   vector < vector < Mat >> frame_HU (100);
+   vector < Mat > tempMatHU (100);
+   vector < int >contornoSize;
+
+   if (argc < 3)
+   {
+      cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << " ListaArchivos DirectorioSalida [Umbraliza]"
+           << endl << endl
+           << "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
+           << endl;
+   }
+   dataFiles = String(argv[1]);
+   OutDir = String(argv[2]) + "/";
+   if (argc > 3)
+      Umbraliza = false;
+
+   infile.open(dataFiles);
+
 
 
 
    cout << "Finding descriptors... " << endl;
+   Mat pointMat (1000, 1500, CV_8UC3, Scalar (0, 0, 0));
+
    namedWindow ("Output", 1);
-   Mat pointMat(1000,1500,CV_8UC3,Scalar(0,0,0));
+
+   if (Umbraliza)
+      namedWindow ("Umbralizada", 1);
 
    while (getline (infile, file))
    {
       istringstream iss (file);
       cout << file << endl;
-      image_path = "Outputs/" + file;
+      image_path = file;
 
       Mat image = imread (image_path, IMREAD_GRAYSCALE);
       if (!image.data)
@@ -121,19 +156,26 @@ int main (void)
       }
 
 
-      Mat element = getStructuringElement (dilation_type,
-                                           Size (2 * dilation_size + 1,
-                                                 2 * dilation_size + 1),
-                                           Point (dilation_size,
-                                                  dilation_size));
+        Mat element = getStructuringElement (dilation_type,
+         Size (2 * dilation_size + 1,
+         2 * dilation_size + 1),
+         Point (dilation_size,
+         dilation_size)); 
 
-      dilate (image, image, element);
+      if (Umbraliza)
+      {
+         threshold (image, image, 0, 255, THRESH_BINARY_INV | THRESH_OTSU);
+         imshow ("Umbralizada", image);
+      }
 
-      findContours (image, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE); //Para HU Moments
+      if (!Umbraliza)
+         dilate (image, image, element);
+
+      findContours (image, contours, RETR_EXTERNAL, CHAIN_APPROX_NONE); //Para HU Moments
 
       Mat imContours;
-    /*Fourier Descriptors */
-      
+      /*Fourier Descriptors */
+
       {
          FourierDescriptor FD;
 
@@ -145,77 +187,91 @@ int main (void)
          plotContours (contoursFourier, imContours, FD);
       }
 
-   
+
       Mat drawing = Mat::zeros (image.size (), CV_8UC3);
       //drawing contours.
       for (unsigned int i = 0; i < contours.size (); i++)
       {
-         Scalar color =
-            Scalar (rng.uniform (0, 256), rng.uniform (0, 256),
-                    rng.uniform (0, 256));
+         Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256),
+                                rng.uniform (0, 256));
          drawContours (drawing, contours, (int) i, color, 2, LINE_8,
-                       hierarchy, 0);
+                       noArray ());
       }
 
-      imwrite (outDir + "contour" + file, drawing);
+      imwrite (OutDir + "contour" + file, drawing);
       //Variables para descriptores de momentos.
       //cout<<contours.size ()<<endl;
-      vector < Moments > mu (contours.size ());//Variable de interés.
-      vector<Point2f> mc( contours.size());//Variable de interés.
-      vector < double[7] > huMoments (contours.size ());//Variable de interés
-      vector <double> distances(contours.size ());
-      Mat huMomentsMat(contours.size(),7,CV_64FC1,Scalar(0));
+      vector < Moments > mu (contours.size ()); //Variable de interés.
+      vector < Point2f > mc (contours.size ()); //Variable de interés.
+      vector < double[7] > huMoments (contours.size ()); //Variable de interés
+      vector < double >distances (contours.size ());
+      Mat huMomentsMat (contours.size (), 7, CV_64FC1, Scalar (0));
       //Variables para descriptores de fourier.
 
       for (unsigned int i = 0; i < contours.size (); i++)
       {
          mu[i] = moments (contours[i]);
 
-         mc[i] = Point2f(  static_cast<float>(mu[i].m10 / (mu[i].m00 + 1e-5)),
-                           static_cast<float>(mu[i].m01 / (mu[i].m00 + 1e-5)) );
+         mc[i] =
+            Point2f (static_cast < float >(mu[i].m10 / (mu[i].m00 + 1e-5)),
+                     static_cast < float >(mu[i].m01 / (mu[i].m00 + 1e-5)));
          HuMoments (mu[i], huMoments[i]);
          for (unsigned int j = 0; j < 7; ++j)
          {
-            huMomentsMat.at<double>(i,j) =-1*copysign (1.0,huMoments[i][j])*log10 (abs (huMoments[i][j])+1e-8);
+            huMomentsMat.at < double >(i, j) =
+               -1 * copysign (1.0,
+                              huMoments[i][j]) *
+               log10 (abs (huMoments[i][j]) + 1e-8);
 
          }
       }
-      
 
-      if(t==0){   
-         contornoSize.push_back(contours.size());       
-         tempMatHU.push_back(huMomentsMat);
-         frame_mc.push_back(mc);
-        // cout<<"Aqui"<<endl;
-      }else{
-         int contornoSizeRespawn = contornoSize.back();
-         contornoSize.pop_back();
-        // cout<<"Size Contorno anterior:  "<<contornoSizeRespawn<<endl;
+
+      if (t == 0)
+      {
+         contornoSize.push_back (contours.size ());
+         tempMatHU.push_back (huMomentsMat);
+         frame_mc.push_back (mc);
+         // cout<<"Aqui"<<endl;
+      }
+      else
+      {
+         int contornoSizeRespawn = contornoSize.back ();
+         contornoSize.pop_back ();
+         // cout<<"Size Contorno anterior:  "<<contornoSizeRespawn<<endl;
          //cout<<"Size Contorno actual: "<<contours.size();
-         vector<Point2f>mcRespawn = frame_mc.back();
-        // cout<<"Centros de masa anteriores: "<<mcRespawn<<endl;
+         vector < Point2f > mcRespawn = frame_mc.back ();
+         // cout<<"Centros de masa anteriores: "<<mcRespawn<<endl;
          //cout<<"Centros de masa actuales: "<<mc<<endl;
-         mcRespawn.pop_back();
+         mcRespawn.pop_back ();
 
-         Mat HuRespawn(contornoSizeRespawn,7,CV_64FC1,Scalar(0));
-         HuRespawn = tempMatHU.back();
+         Mat HuRespawn (contornoSizeRespawn, 7, CV_64FC1, Scalar (0));
+         HuRespawn = tempMatHU.back ();
          //cout<<mcRespawn[0].x<<endl;
-         HuRespawn.pop_back();
-         vector <Point2f> correspondences = findCorrespondences(huMomentsMat, HuRespawn,mc,mcRespawn,contours.size(),contornoSizeRespawn);
-         cout<<correspondences<<endl;
-         pointMat= imContours.clone();
+         HuRespawn.pop_back ();
+         cout << "countours.size() =    " << contours.size() << endl
+              << "contornoSizeRespawn = " << contornoSizeRespawn << endl;
+         vector < Point2f > correspondences =
+            findCorrespondences (huMomentsMat, HuRespawn, mc, mcRespawn,
+                                 contours.size (), contornoSizeRespawn);
+         cout << correspondences << endl;
+         pointMat = imContours.clone ();
          //Punto de Fuga 
 
-         for(unsigned int i=0; i<correspondences.size(); i++){
-           // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
-           Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256), rng.uniform (0, 256));
-            line(pointMat,Point2i(mcRespawn[correspondences[i].x]),Point2i(mc[correspondences[i].y]),color,2,LINE_8);
+         for (unsigned int i = 0; i < correspondences.size (); i++)
+         {
+            // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
+            Scalar color =
+               Scalar (rng.uniform (0, 256), rng.uniform (0, 256),
+                       rng.uniform (0, 256));
+            line (pointMat, Point2i (mcRespawn[correspondences[i].x]),
+                  Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
          }
 
-        // cout<<imContours.type()<<endl;
+         // cout<<imContours.type()<<endl;
 
 
-         
+
          imshow ("Output", pointMat);
          waitKey (0);
          if (waitKeyEx (30) > 0)
@@ -223,23 +279,23 @@ int main (void)
 
          //finaliza punto de fuga.
 
-         contornoSize.push_back(contours.size());
-         frame_mc.push_back(mc);
-         tempMatHU.push_back(huMomentsMat);
+         contornoSize.push_back (contours.size ());
+         frame_mc.push_back (mc);
+         tempMatHU.push_back (huMomentsMat);
          //HuRespawn = tempMatHU.back();
-         
+
          //cout<<huMomentsMat<<endl;
-      }  
+      }
 
-      
+
       //Respaldo de los centros de masa de frames pasados.
-      
-      
 
 
 
-      cout << "Secuencia: " << t << " con : " << contours.
-         size () << " objetos." << endl;
+
+
+      cout << "Secuencia: " << t << " con : " << contours.size () <<
+         " objetos." << endl;
       t++;
 
    }
@@ -248,4 +304,3 @@ int main (void)
 
    return 0;
 }
-
