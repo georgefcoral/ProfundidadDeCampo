@@ -82,7 +82,7 @@ int main (void)
 {
    int t = 0;
    int dilation_type = 2;
-   int dilation_size = 5;
+   int dilation_size = 2;
 
    String dataFiles = "myFile.txt";
    ifstream infile (dataFiles);

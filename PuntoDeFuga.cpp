@@ -44,6 +44,7 @@ vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
                                         vector < Point2f > mc_old,
                                         int SizeNew, int SizeOld)
 {
+   const double umbralDistance = 0	;
    int index1 = 0;
    int index2 = 0;
    vector < Point2f > correspondences; //[SizeOld];
@@ -52,6 +53,8 @@ vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
    {
       for (int j = 0; j < SizeNew; j++)
       {
+         double distancePointsX = (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x);
+         double distancePointsY = (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
          double distance = 0;
          for (int k = 0; k < 7; k++)
          {
@@ -59,9 +62,11 @@ vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
             distance =
                distance + (huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k)) *(huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k));
          }
+
          //Incorporamos a la distancia euclideana los centro de masa.
-         distance = distance + (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x); distance = distance + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
-         distance = sqrt (distance);   //Distancia entre objeto i - j
+         double tempDistMC = sqrt((mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x) + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y));
+         distance = distance + tempDistMC ;
+         //cout<<"tempDistMC: " <<tempDistMC << "del "<<i<<"i-ésimo objeto"<<endl;
          if (j == 0)
          {
             valor_min = distance;
@@ -69,12 +74,13 @@ vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
          }
          else
          {
-            if (distance < valor_min)
+            if (distance < valor_min && tempDistMC < umbralDistance)
             {
+               //cout<<"distancePointsX:  "<<distancePointsX<<"     distancePointsY:  "<<distancePointsX<<endl;
                valor_min = distance;
                index1 = i;
                index2 = j;
-               cout << "Distancia " << i << " -- " << j << "  = " << distance
+               cout << "Distancia " << i << " -- " << j << "  = " << distance<< "distancePointsX+distancePointsY  "<<sqrt(distancePointsX+distancePointsY)
                   << endl;
             }
             else
@@ -100,7 +106,7 @@ int main (int argc, char **argv)
 {
    int t = 0;
    int dilation_type = 2;
-   int dilation_size = 5;
+   int dilation_size = 2;
    bool Umbraliza = true;
 
    String dataFiles, OutDir;
@@ -117,6 +123,9 @@ int main (int argc, char **argv)
    vector < Mat > tempMatHU (100);
    vector < int >contornoSize;
 
+
+   ofstream fileOut("descriptorsFrame.res");
+
    if (argc < 3)
    {
       cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << " ListaArchivos DirectorioSalida [Umbraliza]"
@@ -130,6 +139,7 @@ int main (int argc, char **argv)
       Umbraliza = false;
 
    infile.open(dataFiles);
+
 
 
 
@@ -164,7 +174,7 @@ int main (int argc, char **argv)
 
       if (Umbraliza)
       {
-         threshold (image, image, 0, 255, THRESH_BINARY_INV | THRESH_OTSU);
+         threshold (image, image,0, 255, THRESH_BINARY_INV | THRESH_OTSU);
          imshow ("Umbralizada", image);
       }
 
@@ -183,7 +193,8 @@ int main (int argc, char **argv)
          FD.setContours (contoursFourier);
          FD.computeDescriptors ();
          nDesc = contours.size ();
-         reconError = FD.reconstructContours (0.01);
+         cout<<"nDesc: "<<nDesc<<endl;
+         reconError = FD.reconstructContours (0.5);
          plotContours (contoursFourier, imContours, FD);
       }
 
@@ -232,23 +243,26 @@ int main (int argc, char **argv)
          contornoSize.push_back (contours.size ());
          tempMatHU.push_back (huMomentsMat);
          frame_mc.push_back (mc);
+
          // cout<<"Aqui"<<endl;
+         //fileOut<<contours.size ()<<"\t"<<huMomentsMat<<"\t"<<mc<<endl;
       }
       else
       {
+         
          int contornoSizeRespawn = contornoSize.back ();
-         contornoSize.pop_back ();
+         //contornoSize.pop_back ();
          // cout<<"Size Contorno anterior:  "<<contornoSizeRespawn<<endl;
          //cout<<"Size Contorno actual: "<<contours.size();
          vector < Point2f > mcRespawn = frame_mc.back ();
          // cout<<"Centros de masa anteriores: "<<mcRespawn<<endl;
          //cout<<"Centros de masa actuales: "<<mc<<endl;
-         mcRespawn.pop_back ();
+         //mcRespawn.pop_back ();
 
          Mat HuRespawn (contornoSizeRespawn, 7, CV_64FC1, Scalar (0));
          HuRespawn = tempMatHU.back ();
          //cout<<mcRespawn[0].x<<endl;
-         HuRespawn.pop_back ();
+         //HuRespawn.pop_back ();
          cout << "countours.size() =    " << contours.size() << endl
               << "contornoSizeRespawn = " << contornoSizeRespawn << endl;
          vector < Point2f > correspondences =
@@ -261,12 +275,15 @@ int main (int argc, char **argv)
          for (unsigned int i = 0; i < correspondences.size (); i++)
          {
             // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
-            Scalar color =
-               Scalar (rng.uniform (0, 256), rng.uniform (0, 256),
-                       rng.uniform (0, 256));
-            line (pointMat, Point2i (mcRespawn[correspondences[i].x]),
-                  Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
+            Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256),rng.uniform (0, 256));
+            line (pointMat, Point2i (mcRespawn[correspondences[i].x]),Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
+            //cout<<"frame "<<t<<" --> "<<correspondences[i].x<<"------>"<<correspondences[i].y<<" color:  ("<<color<<")"<<endl;
+           	//circle( pointMat,Point2i (mcRespawn[correspondences[i].x]),5,color,FILLED,LINE_8 );
+           	//circle( pointMat,Point2i (mcRespawn[correspondences[i].y]),5,color,FILLED,LINE_8 );
          }
+
+
+
 
          // cout<<imContours.type()<<endl;
 
@@ -282,6 +299,7 @@ int main (int argc, char **argv)
          contornoSize.push_back (contours.size ());
          frame_mc.push_back (mc);
          tempMatHU.push_back (huMomentsMat);
+        // fileOut<<contours.size ()<<"\t"<<correspondences<<"\t"<<endl;
          //HuRespawn = tempMatHU.back();
 
          //cout<<huMomentsMat<<endl;
@@ -299,8 +317,9 @@ int main (int argc, char **argv)
       t++;
 
    }
+
    cout << "Terminado" << endl;
    infile.close ();
-
+   fileOut.close();
    return 0;
 }
