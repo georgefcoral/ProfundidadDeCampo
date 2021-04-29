@@ -39,63 +39,79 @@ Mat cambia (Mat M)              //Imagen Negativa.
 }
 
 
-vector < Point2f > findCorrespondences (Mat huMomentNew, Mat HuMomentsOld,
+vector < Point2f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
                                         vector < Point2f > mc_new,
                                         vector < Point2f > mc_old,
-                                        int SizeNew, int SizeOld)
+                                        double umbralDistance = 50., int fIdx=0)
 {
-   const double umbralDistance = 0	;
+   int SizeNew = mc_new.size();
+   int SizeOld = mc_old.size();
    int index1 = 0;
    int index2 = 0;
    vector < Point2f > correspondences; //[SizeOld];
-   double valor_min = 0;
+   double valor_min;
+   double lambda = 1.;
+   ofstream fDist;
+   
+   if (fIdx == 1)
+      fDist.open("Distancias.txt");
+   else
+      fDist.open("Distancias.txt", std::ios_base::app);
+
+   fDist << "\% frameIdx sizeOld, sizeNew, idxOld, idxNew, MomemtsOld MomentsNew, DistMoments_ij DistCentro_ij" << endl;
    for (int i = 0; i < SizeOld; i++)
    {
+      valor_min = -1.;
       for (int j = 0; j < SizeNew; j++)
       {
-         double distancePointsX = (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x);
-         double distancePointsY = (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
          double distance = 0;
+
+         fDist << fIdx << ", " << SizeOld << "," << SizeNew << ", "
+               << i << "," << j << ", ";
+
          for (int k = 0; k < 7; k++)
-         {
+            fDist << huMomentsOld.at < double >(i, k) << ",";
+         fDist << " ";
+         for (int k = 0; k < 7; k++)
+            fDist << huMomentsNew.at < double >(j, k) << ",";
+         fDist << " ";
+         for (int k = 0; k < 7; k++)
             //Distancia Euclideana entre cada fila de momentos de HU.
-            distance =
-               distance + (huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k)) *(huMomentNew.at < double >(j, k) - HuMomentsOld.at < double >(i, k));
-         }
+            distance +=
+                (huMomentsNew.at < double >(j, k) - huMomentsOld.at < double >(i, k)) *(huMomentsNew.at < double >(j, k) - huMomentsOld.at < double >(i, k));
+         fDist << mc_old[i].x << "," << mc_old[i].y << ", " << mc_new[j].x
+               << "," << mc_new[j].y << ", " << distance << ",";
 
          //Incorporamos a la distancia euclideana los centro de masa.
-         double tempDistMC = sqrt((mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x) + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y));
-         distance = distance + tempDistMC ;
-         //cout<<"tempDistMC: " <<tempDistMC << "del "<<i<<"i-ésimo objeto"<<endl;
-         if (j == 0)
+         double tempDistMC = (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x) + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
+         distance = distance + lambda * tempDistMC ;
+
+         fDist << tempDistMC << ", " << distance  << endl;
+
+         if( tempDistMC <= umbralDistance)
          {
-            valor_min = distance;
-            continue;
-         }
-         else
-         {
-            if (distance < valor_min && tempDistMC < umbralDistance)
+            if (j == 0)
             {
-               //cout<<"distancePointsX:  "<<distancePointsX<<"     distancePointsY:  "<<distancePointsX<<endl;
                valor_min = distance;
-               index1 = i;
-               index2 = j;
-               cout << "Distancia " << i << " -- " << j << "  = " << distance<< "distancePointsX+distancePointsY  "<<sqrt(distancePointsX+distancePointsY)
-                  << endl;
-            }
-            else
-            {
                continue;
             }
+            else
+               if (distance < valor_min)
+               {
+                  valor_min = distance;
+                  index1 = i;
+                  index2 = j;
+               }
          }
-
       }
-      correspondences.push_back (Point2f (index1, index2));
-      index1 = 0;
-      index2 = 0;
+      if (valor_min >= 0)
+      {
+         cout << "valor_min = " << valor_min << endl;
+         correspondences.push_back (Point2f (index1, index2));
+         index1 = index2 = 0;
+      }
    }
-
-
+   fDist.close();
    return correspondences;
 
 }
@@ -108,6 +124,7 @@ int main (int argc, char **argv)
    int dilation_type = 2;
    int dilation_size = 2;
    bool Umbraliza = true;
+   double umbralDistance = 50.;
 
    String dataFiles, OutDir;
    ifstream infile;
@@ -128,7 +145,7 @@ int main (int argc, char **argv)
 
    if (argc < 3)
    {
-      cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << " ListaArchivos DirectorioSalida [Umbraliza]"
+      cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << " ListaArchivos DirectorioSalida [Umbral Mínimo de Distancia] [Umbraliza]"
            << endl << endl
            << "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
            << endl;
@@ -136,8 +153,17 @@ int main (int argc, char **argv)
    dataFiles = String(argv[1]);
    OutDir = String(argv[2]) + "/";
    if (argc > 3)
-      Umbraliza = false;
-
+   {
+      umbralDistance = atof(argv[3]);
+      if (umbralDistance < 0.)
+      {
+         cerr << "El umbral minimo de distancia tiene que ser mayor que 0"
+              << endl;
+         exit(1);
+      }
+      if (argc > 4)
+         Umbraliza = false;
+   }
    infile.open(dataFiles);
 
 
@@ -214,7 +240,7 @@ int main (int argc, char **argv)
       //cout<<contours.size ()<<endl;
       vector < Moments > mu (contours.size ()); //Variable de interés.
       vector < Point2f > mc (contours.size ()); //Variable de interés.
-      vector < double[7] > huMoments (contours.size ()); //Variable de interés
+      vector < double[7] > momentsHu (contours.size ()); //Variable de interés
       vector < double >distances (contours.size ());
       Mat huMomentsMat (contours.size (), 7, CV_64FC1, Scalar (0));
       //Variables para descriptores de fourier.
@@ -226,13 +252,13 @@ int main (int argc, char **argv)
          mc[i] =
             Point2f (static_cast < float >(mu[i].m10 / (mu[i].m00 + 1e-5)),
                      static_cast < float >(mu[i].m01 / (mu[i].m00 + 1e-5)));
-         HuMoments (mu[i], huMoments[i]);
+         HuMoments (mu[i], momentsHu[i]);
          for (unsigned int j = 0; j < 7; ++j)
          {
             huMomentsMat.at < double >(i, j) =
                -1 * copysign (1.0,
-                              huMoments[i][j]) *
-               log10 (abs (huMoments[i][j]) + 1e-8);
+                              momentsHu[i][j]) *
+               log10 (abs (momentsHu[i][j]) + 1e-8);
 
          }
       }
@@ -266,8 +292,7 @@ int main (int argc, char **argv)
          cout << "countours.size() =    " << contours.size() << endl
               << "contornoSizeRespawn = " << contornoSizeRespawn << endl;
          vector < Point2f > correspondences =
-            findCorrespondences (huMomentsMat, HuRespawn, mc, mcRespawn,
-                                 contours.size (), contornoSizeRespawn);
+            findCorrespondences (huMomentsMat, HuRespawn, mc, mcRespawn, umbralDistance , t);
          cout << correspondences << endl;
          pointMat = imContours.clone ();
          //Punto de Fuga 
