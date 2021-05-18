@@ -39,18 +39,19 @@ Mat cambia (Mat M)              //Imagen Negativa.
 }
 
 
-vector < Point2f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
+vector < Point3f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
                                         vector < Point2f > mc_new,
                                         vector < Point2f > mc_old,
+                                        vector<float> labels,
                                         double umbralDistance = 50., int fIdx=0)
 {
    int SizeNew = mc_new.size();
    int SizeOld = mc_old.size();
    int index1 = 0;
    int index2 = 0;
-   vector < Point2f > correspondences; //[SizeOld];
-   double valor_min;
-   double lambda = 1.;
+   vector < Point3f > correspondences; //[SizeOld];
+   double valor_min = 0;
+   double lambda = 5;
    ofstream fDist;
    
    if (fIdx == 1)
@@ -79,17 +80,21 @@ vector < Point2f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
             //Distancia Euclideana entre cada fila de momentos de HU.
             distance +=
                 (huMomentsNew.at < double >(j, k) - huMomentsOld.at < double >(i, k)) *(huMomentsNew.at < double >(j, k) - huMomentsOld.at < double >(i, k));
+         
+
          fDist << mc_old[i].x << "," << mc_old[i].y << ", " << mc_new[j].x
                << "," << mc_new[j].y << ", " << distance << ",";
 
          //Incorporamos a la distancia euclideana los centro de masa.
          double tempDistMC = (mc_new[j].x - mc_old[i].x) * (mc_new[j].x - mc_old[i].x) + (mc_new[j].y - mc_old[i].y) * (mc_new[j].y - mc_old[i].y);
-         distance = distance + lambda * tempDistMC ;
+         distance = sqrt(distance + lambda * tempDistMC );
 
-         fDist << tempDistMC << ", " << distance  << endl;
-
-         if( tempDistMC <= umbralDistance)
+         fDist << tempDistMC << ", " << distance  << ","<<labels[i]<<endl;
+         //cout<<"Area del objeto: "<<areaObjects[i]<<endl;
+         //cout<<i<<" - "<<j<<"  tempDistMC   ::    "<<sqrt(tempDistMC)<<endl;
+         if( sqrt(tempDistMC) < umbralDistance)
          {
+         
             if (j == 0)
             {
                valor_min = distance;
@@ -106,8 +111,8 @@ vector < Point2f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
       }
       if (valor_min >= 0)
       {
-         cout << "valor_min = " << valor_min << endl;
-         correspondences.push_back (Point2f (index1, index2));
+         //cout << "valor_min = " << valor_min << endl;
+         correspondences.push_back (Point3f (index1, index2,labels[index1]));
          index1 = index2 = 0;
       }
    }
@@ -125,12 +130,12 @@ int main (int argc, char **argv)
    int dilation_size = 2;
    bool Umbraliza = true;
    double umbralDistance = 50.;
-
+  
    String dataFiles, OutDir;
    ifstream infile;
    Mat image;
    vector < vector < Point > >contours;
-   vector < Vec4i > hierarchy;
+   //vector < Vec4i > hierarchy;
 /*FOURIER DESCRIPTORS VARIABLES*/
 
    unsigned int nDesc = 0;
@@ -139,6 +144,7 @@ int main (int argc, char **argv)
    vector < vector < Mat >> frame_HU (100);
    vector < Mat > tempMatHU (100);
    vector < int >contornoSize;
+   //vector <vector<double>>areasPrev(100);
 
 
    ofstream fileOut("descriptorsFrame.res");
@@ -183,7 +189,7 @@ int main (int argc, char **argv)
       istringstream iss (file);
       cout << file << endl;
       image_path = file;
-
+      vector<float> labels;
       Mat image = imread (image_path, IMREAD_GRAYSCALE);
       if (!image.data)
       {
@@ -200,7 +206,10 @@ int main (int argc, char **argv)
 
       if (Umbraliza)
       {
-         threshold (image, image,0, 255, THRESH_BINARY_INV | THRESH_OTSU);
+         threshold (image, image,25, 255, THRESH_BINARY_INV );
+         //erode (image, image, element);
+       //  dilate (image, image, element);
+
          imshow ("Umbralizada", image);
       }
 
@@ -235,47 +244,61 @@ int main (int argc, char **argv)
                        noArray ());
       }
 
-      imwrite (OutDir + "contour" + file, drawing);
+      
       //Variables para descriptores de momentos.
       //cout<<contours.size ()<<endl;
       vector < Moments > mu (contours.size ()); //Variable de interés.
-      vector < Point2f > mc (contours.size ()); //Variable de interés.
+      vector < Point2f > mc_temp (contours.size ()); //Variable de interés.
+      vector < Point2f > mc; //Variable de interés.
       vector < double[7] > momentsHu (contours.size ()); //Variable de interés
       vector < double >distances (contours.size ());
       Mat huMomentsMat (contours.size (), 7, CV_64FC1, Scalar (0));
       //Variables para descriptores de fourier.
-
+      vector <double> areaObjects (contours.size ());
+      int index =0;
       for (unsigned int i = 0; i < contours.size (); i++)
       {
          mu[i] = moments (contours[i]);
 
-         mc[i] =
+         mc_temp[i] =
             Point2f (static_cast < float >(mu[i].m10 / (mu[i].m00 + 1e-5)),
                      static_cast < float >(mu[i].m01 / (mu[i].m00 + 1e-5)));
-         HuMoments (mu[i], momentsHu[i]);
-         for (unsigned int j = 0; j < 7; ++j)
-         {
-            huMomentsMat.at < double >(i, j) =
-               -1 * copysign (1.0,
-                              momentsHu[i][j]) *
-               log10 (abs (momentsHu[i][j]) + 1e-8);
+         
 
+          //areaObjects.push_back(contourArea(contours[i]));
+         
+  
+         if(mu[i].m00>700 ){
+         	HuMoments (mu[i], momentsHu[i]);
+
+         	for (unsigned int j = 0; j < 7; ++j)
+         		{
+            huMomentsMat.at < double >(index, j) = -1 * copysign (1.0,momentsHu[i][j]) *log10 (abs (momentsHu[i][j]) + 1e-8);
+         		}
+
+         	areaObjects.push_back(mu[i].m00);
+         	mc.push_back(mc_temp[i]);
+         	labels.push_back(i);
+         	//cout<<Point2i (mc_temp[i]);
+         	//cout<<"   Objeto "<<i<<"  ---  "<<mu[i].m00<<endl;
+         	//circle( imContours,Point2i (mc_temp[i]),2,Scalar(255,0,0),FILLED,LINE_8 );
+         	cv::putText(imContours,to_string(i),Point2i (mc_temp[i]),cv::FONT_HERSHEY_DUPLEX,1,cv::Scalar(0,255,0),1,false);
+         	index++;
          }
       }
 
-
+      imwrite (OutDir + "contour" + file, drawing);
       if (t == 0)
       {
-         contornoSize.push_back (contours.size ());
+         contornoSize.push_back (mc.size ());
          tempMatHU.push_back (huMomentsMat);
          frame_mc.push_back (mc);
-
+         
          // cout<<"Aqui"<<endl;
          //fileOut<<contours.size ()<<"\t"<<huMomentsMat<<"\t"<<mc<<endl;
       }
       else
       {
-         
          int contornoSizeRespawn = contornoSize.back ();
          //contornoSize.pop_back ();
          // cout<<"Size Contorno anterior:  "<<contornoSizeRespawn<<endl;
@@ -289,10 +312,10 @@ int main (int argc, char **argv)
          HuRespawn = tempMatHU.back ();
          //cout<<mcRespawn[0].x<<endl;
          //HuRespawn.pop_back ();
-         cout << "countours.size() =    " << contours.size() << endl
-              << "contornoSizeRespawn = " << contornoSizeRespawn << endl;
-         vector < Point2f > correspondences =
-            findCorrespondences (huMomentsMat, HuRespawn, mc, mcRespawn, umbralDistance , t);
+         //cout << "countours.size() =    " << contours.size() << endl
+           //   << "contornoSizeRespawn = " << contornoSizeRespawn << endl;
+         vector < Point3f > correspondences =
+            findCorrespondences (huMomentsMat, HuRespawn, mc, mcRespawn,labels, umbralDistance , t);
          cout << correspondences << endl;
          pointMat = imContours.clone ();
          //Punto de Fuga 
@@ -301,7 +324,7 @@ int main (int argc, char **argv)
          {
             // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
             Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256),rng.uniform (0, 256));
-            line (pointMat, Point2i (mcRespawn[correspondences[i].x]),Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
+            line (imContours, Point2i (mcRespawn[correspondences[i].x]),Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
             //cout<<"frame "<<t<<" --> "<<correspondences[i].x<<"------>"<<correspondences[i].y<<" color:  ("<<color<<")"<<endl;
            	//circle( pointMat,Point2i (mcRespawn[correspondences[i].x]),5,color,FILLED,LINE_8 );
            	//circle( pointMat,Point2i (mcRespawn[correspondences[i].y]),5,color,FILLED,LINE_8 );
@@ -314,14 +337,14 @@ int main (int argc, char **argv)
 
 
 
-         imshow ("Output", pointMat);
+         imshow ("Output", imContours);
          waitKey (0);
          if (waitKeyEx (30) > 0)
             break;
 
          //finaliza punto de fuga.
 
-         contornoSize.push_back (contours.size ());
+         contornoSize.push_back (mc.size ());
          frame_mc.push_back (mc);
          tempMatHU.push_back (huMomentsMat);
         // fileOut<<contours.size ()<<"\t"<<correspondences<<"\t"<<endl;
