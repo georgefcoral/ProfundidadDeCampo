@@ -121,6 +121,35 @@ vector < Point3f > findCorrespondences (Mat huMomentsNew, Mat huMomentsOld,
 
 }
 
+Point3f getLineTwo(Point2i pt1, Point2i pt2){
+	Point3f coeff;
+	double m = (pt2.y - pt1.y)/(pt2.x-pt1.x);
+	double b = (-m*pt1.x+pt1.y);
+	double A,B,C;
+	A = 1/b;
+	B= m /b;
+	C = 1;
+	coeff = Point3f(A,B,C);
+	return coeff;
+}
+
+Point2i escapePoint(vector<Point2i> pts1, vector<Point2i> pts2){
+	Mat matrixA(pts1.size (),2,CV_64FC1,Scalar(0));
+	Mat b (pts1.size (),1,CV_64FC1,Scalar(1));
+	Mat output;
+
+	for(unsigned int i = 0; i < pts1.size (); i++){
+
+		matrixA.at<double>(i,0) =getLineTwo(pts1[i],pts2[i]).x;
+		matrixA.at<double>(i,1) =getLineTwo(pts1[i],pts2[i]).y;
+
+	}
+	cout<<matrixA<<endl;
+	cout<<b<<endl;
+	solve(matrixA,b.t(),output,DECOMP_NORMAL);
+	cout<<"Punto de fuga es:   "<<output<<endl;
+	return Point2i(0,0);
+}
 
 
 int main (int argc, char **argv)
@@ -319,23 +348,25 @@ int main (int argc, char **argv)
          cout << correspondences << endl;
          pointMat = imContours.clone ();
          //Punto de Fuga 
-
+         vector <Point2i> pts1;
+         vector <Point2i> pts2;
          for (unsigned int i = 0; i < correspondences.size (); i++)
          {
             // cout<<"["<<Point2i(mcRespawn[correspondences[i].x])<<"::"<<mc[correspondences[i].y]<<"]"<<endl;
             Scalar color = Scalar (rng.uniform (0, 256), rng.uniform (0, 256),rng.uniform (0, 256));
+            pts1.push_back(Point2i (mcRespawn[correspondences[i].x]));
+            pts2.push_back(Point2i (mc[correspondences[i].y]));
             line (imContours, Point2i (mcRespawn[correspondences[i].x]),Point2i (mc[correspondences[i].y]), color, 2, LINE_8);
             //cout<<"frame "<<t<<" --> "<<correspondences[i].x<<"------>"<<correspondences[i].y<<" color:  ("<<color<<")"<<endl;
            	//circle( pointMat,Point2i (mcRespawn[correspondences[i].x]),5,color,FILLED,LINE_8 );
            	//circle( pointMat,Point2i (mcRespawn[correspondences[i].y]),5,color,FILLED,LINE_8 );
          }
 
+    	//Point2i fugaPoint = escapePoint(pts1,pts2);
 
 
 
          // cout<<imContours.type()<<endl;
-
-
 
          imshow ("Output", imContours);
          waitKey (0);
