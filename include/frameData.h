@@ -19,6 +19,7 @@ struct frameData
    vector < Moments > mu; //momentos.
    vector <momHu> momentsHu;//momentos de Hu.
    vector < Point2f > mc; //Centros de Masa.
+   vector <float> areas;
    frameData()
    {
    }
@@ -31,6 +32,7 @@ struct frameData
       mu = F.mu;
       momentsHu  = F.momentsHu;
       mc = F.mc;
+      areas = F.areas;
    }
    void operator = (const frameData &F)
    {
@@ -41,6 +43,7 @@ struct frameData
       mu = F.mu;
       momentsHu  = F.momentsHu;
       mc = F.mc;
+      areas = F.areas;
    }
 };
 

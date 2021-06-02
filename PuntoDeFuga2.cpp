@@ -32,7 +32,6 @@ int main (int argc, char **argv)
    vector <Mat> mcGlobal(100);
    Mat pointMat;
    int rowsGlobal,colsGlobal;
-   const int umbralArea = 450;
    float maxCorrespondences = 0;
    int t = 0;
    int dilation_type = 2;
@@ -99,9 +98,9 @@ int main (int argc, char **argv)
    infile.open(dataFiles);
    
    
-   namedWindow ("Output", 1);
-   if (Umbraliza)
-      namedWindow ("Umbralizada", 1);
+ //  namedWindow ("Output", 1);
+ //  if (Umbraliza)
+     // namedWindow ("Umbralizada", 1);
 
 	//Elemento necesario para el ajuste de dilatación.
    Mat element = getStructuringElement (dilation_type,
@@ -150,13 +149,67 @@ int main (int argc, char **argv)
         	for (unsigned int j = 0; j < 7; ++j)
             mH.mH[j] = -1 * copysign (1.0,mH.mH[j]) *log10 (abs (mH.mH[j]) + 1e-8);
         	fD.momentsHu.push_back(mH);
+          fD.areas.push_back(mo.m00);
      }
+     t++;
      Frames.push_back(fD);
    }
-   
-   for (unsigned int i = 1; i < Frames.size(); ++i)
-       vector < Point3f > correspondences =  findCorrespondences2 (Frames, i-1, i, umbralHu, umbralDistance, i);
+   vector <vector<Point2f>> mcCorrespondences(100);
+   vector <vector < Point3f >> correspondences;
+   vector < Point3f > corrCurrent;
+   vector < Point3f > corrPast;
+   unsigned int maxCorr=0;
 
+   /*Se generan filas de correspondencias para cada objeto encontrado en cada uno de los frames.*/
+   for (unsigned int i = 1; i < Frames.size(); ++i){
+       correspondences.push_back(findCorrespondences2 (Frames, i-1, i, umbralHu, umbralDistance, i));
+       //cout<<correspondences.back()<<endl;
+       corrCurrent = correspondences.back();
+
+       if(i==1){
+          for(unsigned int j =0 ; j<corrCurrent.size(); j++){
+          //cout<<Frames[i].mc[corrCurrent[j].x]<<endl;
+            mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].x]);
+            //mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].y]);
+            //cout<<Frames[i].mc[corrCurrent[j].x]<<"------"<<Frames[i].mc[corrCurrent[j].y]<<endl;
+          }
+          if(maxCorr<corrCurrent.size()){
+            maxCorr = corrCurrent.size();
+          } 
+          corrPast = corrCurrent;
+       }else{
+          for(unsigned int j = 0; j<corrCurrent.size(); j++){
+            for(unsigned int k = 0; k<corrPast.size();k++){
+                if (corrPast[k].y == corrCurrent[j].x){
+                   // cout<<corrPast[k].y<<", "<<corrCurrent[j].x<<"   "<<Frames[i-1].mc[corrPast[k].y]<<":"<<Frames[i].mc[corrCurrent[j].y]<<"--";
+                    mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].y]);
+                    break;
+                }else{
+                  continue;
+                }
+            }
+            if(maxCorr<corrCurrent.size()){
+              maxCorr = corrCurrent.size();
+            } 
+          }
+        corrPast = corrCurrent;
+       }
+     }
+
+    Mat M = Mat::zeros(4,4,CV_64FC1);
+   for (unsigned int i=0; i<maxCorr;i++){
+     // cout<<i<<".- "<<mcCorrespondences[i]<<endl;
+      //cout<<getCoeffLine(getLine(mcCorrespondences[i])).t()<<endl;
+      Mat x = getCoeffLine(getLine(mcCorrespondences[i]));
+      M = M + x*x.t();
+   }
+   cout<<"M"<<endl<<M<<endl;
+   M = M / maxCorr;
+   Mat eigenValues;
+   Mat eigenVectors;
+   eigen(M,eigenValues,eigenVectors);
+   cout<<"eigenVectors: \n"<<eigenVectors<<endl;
+   cout<<"eigenValues: \n"<<eigenValues<<endl;
    infile.close ();
    fileOut.close();
    return 0;
