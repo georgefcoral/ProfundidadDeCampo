@@ -118,6 +118,8 @@ int main (int argc, char **argv)
             break;
          }
       }
+      if (i == nContours1)
+         break;
       cvtColor (Image1, I1, COLOR_GRAY2RGB);
       cvtColor (Image2, I2, COLOR_GRAY2RGB);
       drawContours (I1, sContours1, i, Scalar (000, 000, 255), 2);

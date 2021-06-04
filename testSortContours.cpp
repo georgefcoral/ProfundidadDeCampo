@@ -79,5 +79,6 @@ int main (int argc, char **argv)
          break;
       cont = (cont + 1) % nContours;
    }
+   destroyAllWindows();
    return 0;
 }
