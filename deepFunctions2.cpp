@@ -102,29 +102,10 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
                  2.) + pow (Frames[idx1].mc[i].y - Frames[idx2].mc[j].y, 2.);
          ImD1 = Im1.clone ();
          ImD2 = Im2.clone ();
-        /* 
-            circle(ImD1, Point(Frames[idx1].mc[i].x,Frames[idx1].mc[i].y), 10, Scalar(255, 0, 255),FILLED,LINE_8);
-            circle(ImD2, Point(Frames[idx2].mc[j].x,Frames[idx2].mc[j].y), 10, Scalar(128, 255, 128),FILLED,LINE_8);
-            snprintf(buff, 255, "dHu = %f, dEucSq = %f", sqrt(distance), sqrt(tempDistMC));
-            putText(ImD1, String(buff), Point2i (50, ImD1.rows-50), FONT_HERSHEY_DUPLEX,1, Scalar(0,255,0),1,false);
-            imshow("Figura1", ImD1);
-            imshow("Figura2", ImD2);
-            waitKey(0);
-            if (waitKeyEx (30) > 0)
-            break;       
-          */
- //        cout << "DistE ("<< i << ", " << j << ") = " << sqrt(tempDistMC) << " | "
- //             << "DistH ("<< i << ", " << j << ") = " << sqrt(distance) << endl;
-               
- //        if (tempDistMC < umbralDistance && distance < umbralHu)
+
          {
 
             //Incorporamos a la distancia euclideana los centro de masa.
-
-            // fDist << sqrt(tempDistMC) << ", " << sqrt(distance)  << ","<<labels[i]<<endl;
-            //cout<<"Area del objeto: "<<areaObjects[i]<<endl;
-            //cout<<i<<" - "<<j<<"  tempDistMC   ::    "<<sqrt(tempDistMC)<<endl;
-            // cout<<"frameIds "<<fIdx<<" distance: "<<distance<<" umbralHu: "<<umbralHu<<" j "<<j<<endl; 
             if (j == 0)
             {
 
@@ -142,18 +123,17 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
                   valor_min = tempDistMC;
                   index1 = i;
                   index2 = j;
-                  finalDCD = tempDistMC;
-                  finalHUD = distance;
+                 // finalDCD = tempDistMC;
+                 //finalHUD = distance;
                }
                if (distance < minHu)
                   minHu = distance;
             }
          }                      //if(distance < ...
       }                         //for (j=...
-//      cout << "MinHu = " << sqrt(minHu) << endl << endl;
       if (valor_min >= 0)
       {
-         
+            /*
             circle(ImD1, Point(Frames[idx1].mc[index1].x,Frames[idx1].mc[index1].y), 10, Scalar(255, 0, 255),FILLED,LINE_8);
             circle(ImD2, Point(Frames[idx2].mc[index2].x,Frames[idx2].mc[index2].y), 10, Scalar(128, 255, 128),FILLED,LINE_8);
             snprintf(buff, 255, "dHu = %f, dEucSq = %f", sqrt(finalHUD), sqrt(finalDCD));
@@ -163,7 +143,7 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
             waitKey(0);
             if (waitKeyEx (30) > 0)
             break; 
-          
+          */
          //cout << "valor_min = " << valor_min << endl;
          correspondences.push_back (Point3f (index1, index2, 1));
          index1 = index2 = 0;

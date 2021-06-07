@@ -62,7 +62,6 @@ int cmpCentros(const void *a, const void *b)
 int main (int argc, char **argv)
 {
    //vector <vector < Point2i >> mcGlobal(100);
-   vector <Mat> mcGlobal(100);
    Mat pointMat;
    int t = 0;
    int dilation_type = 2;
@@ -75,7 +74,7 @@ int main (int argc, char **argv)
    unsigned int h, i, j;
 
   
-   String dataFiles, OutDir;
+   String dataFiles;
    ifstream infile;
    Mat image;
 
@@ -91,16 +90,16 @@ int main (int argc, char **argv)
    ofstream fileOut("descriptorsFrame.res");
 
    /*VALIDACIÓN DE PARAMETROS*/
-   if (argc < 3)
+   if (argc < 4)
    {
-      cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << " ListaArchivos DirectorioSalida [Umbral Area] [Umbral Mínimo de Distancia] [Umbral Similitud]"
+      cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] << "ListaArchivos"<<" [umbralArea]"<< "[umbralDistance]"<<" [umbralHu]"
            << endl << endl
            << "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
            << endl;
    }
 
    dataFiles = String(argv[1]);
-   OutDir = String(argv[2]) + "/";
+
    if (argc > 3)
    {
       umbralArea = atof(argv[3]);
@@ -131,7 +130,7 @@ int main (int argc, char **argv)
          }
       }
    }
-
+ 
 
    infile.open(dataFiles);
    
@@ -240,8 +239,7 @@ int main (int argc, char **argv)
    }
    vector <vector<Point2f>> mcCorrespondences(100);
    vector <vector < Point3f >> correspondences;
-   vector < Point3f > corrCurrent;
-   vector < Point3f > corrPast;
+
 
    /*Se generan filas de correspondencias para cada objeto encontrado en cada uno de los frames.*/
    for (i = 1; i < Frames.size(); ++i)
@@ -249,21 +247,26 @@ int main (int argc, char **argv)
        correspondences.push_back(findCorrespondences2 (Frames, i-1, i, umbralHu, umbralDistance, i));
        cout<<"{" << i << "}" <<correspondences.back()<<endl;
    }
-
+   
    //Inicializamos cada Vector de indices con la el indice de la primera linea.
    vector<vector<int> > idxLines(correspondences[0].size());
+   vector<vector<Point2f> > ptsLines(correspondences[0].size());
+   //cout<<"correspondences[0].size()+1: " <<correspondences[0].size()+2<<endl;
    for (i=0;i<correspondences[0].size(); ++i)
       idxLines[i].push_back(correspondences[0][i].x);
 
    //Añadimos el indice correspondiente a la segunda linea.
    for (i=0;i<correspondences[0].size(); ++i)
       idxLines[i].push_back(correspondences[0][i].y);
-
-   for (h = 0; h < correspondences.size()-1; h++)
+   
+   
+   for (h = 0; h < correspondences.size()-1; ++h)
    {
       //Añadimos el indice correspondiente a la cuarta linea.
+      //cout<<correspondences.size()<<endl;
       for (i=0;i<correspondences[h].size(); ++i)
       {
+
          int idx = idxLines[i][h+1];
 
          if (idx == -1)
@@ -273,70 +276,26 @@ int main (int argc, char **argv)
          for (j=0; j<correspondences[h+1].size(); ++j)
             if (correspondences[h+1][j].x == idx)
                break;
+
+        //cout<<"[ "<<idxLines.size()<<" , " <<correspondences[h].size()<<" ]"<<endl;
+        //cout<<"h: "<<h<<" i: "<<i<<endl;
+        //cout<<" idxLines[i][h+1]: "<<idxLines[i][h+1]<<endl;
          if (j < correspondences[h+1].size())//Validamos que lo haya encontrado.
             idxLines[i].push_back(correspondences[h+1][j].y);
          else
             idxLines[i].push_back(-1);//Marcamos que hasta ahí llego la linea.
-      }       
+         cout<<idxLines[i][h]<<endl;      
+      }
+
    }
 
    for (i=0;i<idxLines.size(); ++i)
    {
       cout << "Indices de la linea "<< i << " : "; 
       for (j=0;j < idxLines[i].size()-1; ++j)
-         cout << idxLines[i][j] << " ";
-      cout << idxLines[i][j] << endl;
+        ptsLines[i].push_back(Point2f(Frames[j].mc[idxLines[i][j]]));
+     // cout << idxLines[i][j] << endl;
    }
-
-
-/*
-       corrCurrent = correspondences.back();
-
-       if(i==1){
-          for(unsigned int j =0 ; j<corrCurrent.size(); j++){
-          //cout<<Frames[i].mc[corrCurrent[j].x]<<endl;
-            mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].x]);
-            //mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].y]);
-            //cout<<Frames[i].mc[corrCurrent[j].x]<<"------"<<Frames[i].mc[corrCurrent[j].y]<<endl;
-          }
-          if(maxCorr<corrCurrent.size()){
-            maxCorr = corrCurrent.size();
-          } 
-          corrPast = corrCurrent;
-       }else{
-          for(unsigned int j = 0; j<corrCurrent.size(); j++){
-            for(unsigned int k = 0; k<corrPast.size();k++){
-                if (corrPast[k].y == corrCurrent[j].x){
-                   // cout<<corrPast[k].y<<", "<<corrCurrent[j].x<<"   "<<Frames[i-1].mc[corrPast[k].y]<<":"<<Frames[i].mc[corrCurrent[j].y]<<"--";
-                    mcCorrespondences[j].push_back(Frames[i].mc[corrCurrent[j].y]);
-                    break;
-                }else{
-                  continue;
-                }
-            }
-            if(maxCorr<corrCurrent.size()){
-              maxCorr = corrCurrent.size();
-            } 
-          }
-        corrPast = corrCurrent;
-       }
-     }
-
-    Mat M = Mat::zeros(4,4,CV_64FC1);
-   for (unsigned int i=0; i<maxCorr;i++){
-      cout<<i<<".- "<<mcCorrespondences[i]<<endl;
-      //cout<<getCoeffLine(getLine(mcCorrespondences[i])).t()<<endl;
-      Mat x = getCoeffLine(getLine(mcCorrespondences[i]));
-      M = M + x*x.t();
-   }
-   cout<<"M"<<endl<<M<<endl;
-   M = M / maxCorr;
-   Mat eigenValues;
-   Mat eigenVectors;
-   eigen(M,eigenValues,eigenVectors);
-   cout<<"eigenVectors: \n"<<eigenVectors<<endl;
-   cout<<"eigenValues: \n"<<eigenValues<<endl;
-   */
    
    infile.close ();
    fileOut.close();
