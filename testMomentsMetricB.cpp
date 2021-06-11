@@ -70,7 +70,7 @@ int main (int argc, char **argv)
       mo1 = moments (sContours1[i]);
       HuMoments (mo1, Hu1);
 //      normHuMoments(Hu1);
-      for (j = i; j < nContours2; ++j)
+      for (j = 0; j < nContours2; ++j)
       {
          double d;
 

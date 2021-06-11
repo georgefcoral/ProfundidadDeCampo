@@ -8,8 +8,8 @@ ejecutableFocusingMeasures: FocusingMeasures.cpp
 ejecutableFocusingMeasures2: FocusingMeasures2.cpp
 	g++ $(CXXFLAGS) `pkg-config --cflags opencv4` -o ejecutableFocusingMeasures2 -lfftw3 FocusingMeasures2.cpp  `pkg-config --libs opencv4` -lm -lfftw3 
 
-PuntoDeFuga2: objs/PuntoDeFuga2.o objs/deepFunctions2.o
-	g++ $(CXXFLAGS) -o PuntoDeFuga2 objs/PuntoDeFuga2.o objs/deepFunctions2.o `pkg-config opencv4 --libs` -lfftw3
+PuntoDeFuga2: objs/PuntoDeFuga2.o objs/deepFunctions2.o objs/sortContours.o
+	g++ $(CXXFLAGS) -o PuntoDeFuga2 objs/PuntoDeFuga2.o objs/deepFunctions2.o objs/sortContours.o `pkg-config opencv4 --libs`
 
 testSortContours: objs/testSortContours.o objs/sortContours.o
 	g++ $(CXXFLAGS) -o testSortContours objs/testSortContours.o objs/sortContours.o `pkg-config opencv4 --libs`
