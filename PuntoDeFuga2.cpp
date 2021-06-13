@@ -233,26 +233,86 @@ int main (int argc, char **argv)
       tObjs.incIdx ();
       t++;
    }
+
+   ofstream fOut,fOut2;
+   fOut.open("tracking.txt");
+   fOut2.open("tracking2.py");
    cout << "T = [";
+   unsigned int k = 0;
+   cout<<" tObjs.maxSeq: "<<tObjs.maxSeq<<endl;
+   cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
+
+
+   for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
+   {
+      for (j=0;j<tObjs.maxElements;++j)//Número de objetos
+      {
+         fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
+      }
+
+   }
+
+
+
+
+
+
+   fOut2.close();
+   fOut.close();
+   infile.close ();
+   fileOut.close ();
+   return 0;
+}
+
+/*
    for (i=0;i<tObjs.maxSeq;++i)
    {
-    for (j=0;j<tObjs.maxElements-1;++j)
+    fOut2<<"[";
+    for (j=0;j<tObjs.maxElements;++j)
     {
-      if (tObjs.Table[i][j].status == DEFINED)
+      fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl; 
+     if (tObjs.Table[i][j].status == DEFINED)
          cout << tObjs.Table[i][j].mc.x << ", "
               << tObjs.Table[i][j].mc.y << ", ";
       else
          cout << "0, 0, ";
     }
-    if (tObjs.Table[i][j].status == DEFINED)
+    }  
+
+
+    if (tObjs.Table[i][j].status == DEFINED){
       cout << tObjs.Table[i][j].mc.x << ", "
            << tObjs.Table[i][j].mc.y << ";" << endl;
-   else
+    }
+   else{
       cout << "0, 0;" << endl;
    }
-   cout << "]" << endl;
+   }
 
-   infile.close ();
-   fileOut.close ();
-   return 0;
+   */
+
+
+
+/*for (j=0;j<tObjs.maxElements-1;++j)//Número de objetos
+{
+
+   fOut<<tObjs.Table[0][j].mc.x<<","<<tObjs.Table[0][j].mc.y<<","<<
+      tObjs.Table[1][j].mc.x<<","<<tObjs.Table[1][j].mc.y<<","<<
+      tObjs.Table[2][j].mc.x<<","<<tObjs.Table[2][j].mc.y<<","<<
+      tObjs.Table[3][j].mc.x<<","<<tObjs.Table[3][j].mc.y<<","<<
+      tObjs.Table[4][j].mc.x<<","<<tObjs.Table[4][j].mc.y<<","<<
+      tObjs.Table[5][j].mc.x<<","<<tObjs.Table[5][j].mc.y<<","<<
+      tObjs.Table[6][j].mc.x<<","<<tObjs.Table[6][j].mc.y<<","<<
+      tObjs.Table[7][j].mc.x<<","<<tObjs.Table[7][j].mc.y<<","<<
+      tObjs.Table[8][j].mc.x<<","<<tObjs.Table[8][j].mc.y<<","<<
+      tObjs.Table[9][j].mc.x<<","<<tObjs.Table[9][j].mc.y<<","<<
+      tObjs.Table[10][j].mc.x<<","<<tObjs.Table[10][j].mc.y<<","<<
+      tObjs.Table[11][j].mc.x<<","<<tObjs.Table[11][j].mc.y<<","<<endl;
+
+      for(i=0;i<tObjs.maxSeq-1;++i){
+   fOut<<"mc"+  to_string(i)+",";
 }
+fOut<<"mc"+  to_string(i)<<endl;
+
+
+}*/
