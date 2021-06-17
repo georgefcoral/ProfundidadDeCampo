@@ -46,7 +46,6 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
    double valor_min = 0, minHu = 0;
    ofstream fDist;
    double tempDistMC = 0, distance = 0;
-   double finalDCD, finalHUD;
    Mat Im1, Im2, ImD1, ImD2;
 
    namedWindow ("Figura1", 1);
@@ -54,7 +53,7 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
 
    cvtColor (Frames[idx1].Image, Im1, COLOR_GRAY2RGB);
    cvtColor (Frames[idx2].Image, Im2, COLOR_GRAY2RGB);
-   char buff[256];
+   //char buff[256];
    //Para evitar calcula distancia al cuadrado.
    umbralDistance *= umbralDistance;
    umbralHu *= umbralHu;
@@ -155,55 +154,9 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
    return correspondences;
 }
 
-//Regresa una pendiente, y un punto (x0,y0) perteneciente a la recta.
-Point3f getLine (vector < Point2f > points)
-{
-
-   Point3f params;
-   Mat line;
-   double m;
-   double abscisa;
-   double ordenada;
-   if (points.size () == 0)
-   {
-      m = 0;
-      abscisa = 0;
-      ordenada = 0;
-   }
-   else
-   {
-      fitLine (Mat (points), line, DIST_L2, 0, 0.01, 0.01);
-      m = line.at < float >(1, 0) / line.at < float >(0, 0);   //Pendiente de la recta.
-      abscisa = line.at < float >(2, 0);  // valor x0 de la recta ajustada.
-      ordenada = line.at < float >(3, 0); // valor y0  de la recta ajustada.
-   }
-   params = Point3f (m, abscisa, ordenada);
-   return params;
-}
-
-//Obtenemos los coeficientes de la forma general de la recta
-//Ax+By+C = 0 en su versión homogenea.
-Mat getCoeffLine (Point3f params)
-{
-   double A, B, C;
-   if (params == Point3f (0, 0, 0))
-   {
-      A = B = C = 0;
-   }
-   else
-   {
-      A = -params.x;
-      B = 1.0;
-      C = -params.z + params.y * params.x;
-   }
-
-   Mat coeff = (Mat_ < double >(4, 1) << A, B, C, 1);
-   return coeff;
-}
-
 
 Mat fitLine(vector<Mat> pointsToFit){
-unsigned i,j;
+unsigned i;
 double epsilon = 0.1; 
 double W = 1; 
 double c = 0; 
@@ -225,11 +178,11 @@ while(true){
    Mat eigenVectors;
   
    eigen(M-c*N,eigenValues,eigenVectors);
-  
-   Mat en = (Mat_<float>(3,1)<<eigenVectors.at<float>(2,0),
-                                 eigenVectors.at<float>(2,1),
-                                 eigenVectors.at<float>(2,2));
+   
+   cout<<"eigenValues: "<<eigenValues<<endl;
    float el = eigenValues.at<float>(2,0);
+   Mat en = eigenVectors.row(2).t();
+
    conta++;
    if(abs(el)<0.000003){
       Af = en.at<float>(2,0);
