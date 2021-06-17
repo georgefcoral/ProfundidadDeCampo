@@ -242,20 +242,26 @@ int main (int argc, char **argv)
    cout<<" tObjs.maxSeq: "<<tObjs.maxSeq<<endl;
    cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
 
-
+//   double xs[] = {400,350,250,200,150};
+  // double ys[] = {400,250,190,150,100};
    for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
    {
+      vector<Mat> pointsToFit;
       for (j=0;j<tObjs.maxElements;++j)//Número de objetos
       {
-         fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
+      fOut<<tObjs.Table[j][i].mc.x<<","<<tObjs.Table[j][i].mc.y<<endl;
+      Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[j][i].mc.x,tObjs.Table[j][i].mc.y,1);
+      //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
+      pointsToFit.push_back(pts);
       }
+
+      //cout<<pointsToFit[0].t()<<endl;
+      cout<<fitLine(pointsToFit)<<endl;
 
    }
 
-
-
-
-
+   //Codigo Ajuste de puntos a una linea.
+   
 
    fOut2.close();
    fOut.close();

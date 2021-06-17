@@ -200,3 +200,54 @@ Mat getCoeffLine (Point3f params)
    Mat coeff = (Mat_ < double >(4, 1) << A, B, C, 1);
    return coeff;
 }
+
+
+Mat fitLine(vector<Mat> pointsToFit){
+unsigned i,j;
+double epsilon = 0.1; 
+double W = 1; 
+double c = 0; 
+double Af, Bf, Cf;
+Mat M = Mat::zeros(3,3,CV_32FC1);
+Mat N = M.clone();
+Mat Vo = (Mat_ < float >(3, 3) << pow(epsilon,2),0,0,0,pow(epsilon,2), 0, 0, 0, 1);
+int conta = 0;
+while(true){
+   for(i = 0;i < pointsToFit.size();++i){
+      Mat pts = pointsToFit[i].clone();
+      M += W*pts*pts.t();
+      N += W*Vo;
+      //cout<<M<<endl;
+   }
+   M = M/pointsToFit.size();
+   N = N/pointsToFit.size();
+   Mat eigenValues;
+   Mat eigenVectors;
+  
+   eigen(M-c*N,eigenValues,eigenVectors);
+  
+   Mat en = (Mat_<float>(3,1)<<eigenVectors.at<float>(2,0),
+                                 eigenVectors.at<float>(2,1),
+                                 eigenVectors.at<float>(2,2));
+   float el = eigenValues.at<float>(2,0);
+   conta++;
+   if(abs(el)<0.000003){
+      Af = en.at<float>(2,0);
+      Bf = en.at<float>(2,1);
+      Cf = en.at<float>(2,2);
+      break;
+   }else{
+      if(conta>100){
+         cout<<"Maximas iteraciones alcanzadas"<<endl;
+         break;
+      }
+   }
+   W = 1.0/en.dot(Vo*en);
+   c = (c + el )/ en.dot(N*en);
+  // cout<<"conta = "<<conta<<"  c = "<<c<<" W = "<<W<<endl; 
+}
+Mat line = (Mat_<float>(1,3)<<Af,Bf,Cf);
+return line;
+
+}
+

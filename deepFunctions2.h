@@ -11,5 +11,5 @@ vector < Point3f > findCorrespondences2 (vector<frameData> Frames, int idx1, int
 Point3f getLine(vector<Point2f> points);
 Mat getCoeffLine(Point3f params);
 
-
+Mat fitLine(vector<Mat> pointsToFit);
 #endif
