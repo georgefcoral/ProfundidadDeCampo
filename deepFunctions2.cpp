@@ -116,14 +116,14 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
             }
             else
             {
-               if (tempDistMC< valor_min)
+               if (tempDistMC < valor_min)
                {
                   //cout<<"frameIds "<<fIdx<<" distance: "<<distance<<" umbralHu: "<<umbralHu<<endl;
                   valor_min = tempDistMC;
                   index1 = i;
                   index2 = j;
-                 // finalDCD = tempDistMC;
-                 //finalHUD = distance;
+                  // finalDCD = tempDistMC;
+                  //finalHUD = distance;
                }
                if (distance < minHu)
                   minHu = distance;
@@ -132,7 +132,7 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
       }                         //for (j=...
       if (valor_min >= 0)
       {
-            /*
+         /*
             circle(ImD1, Point(Frames[idx1].mc[index1].x,Frames[idx1].mc[index1].y), 10, Scalar(255, 0, 255),FILLED,LINE_8);
             circle(ImD2, Point(Frames[idx2].mc[index2].x,Frames[idx2].mc[index2].y), 10, Scalar(128, 255, 128),FILLED,LINE_8);
             snprintf(buff, 255, "dHu = %f, dEucSq = %f", sqrt(finalHUD), sqrt(finalDCD));
@@ -155,52 +155,87 @@ vector < Point3f > findCorrespondences2 (vector < frameData > Frames,
 }
 
 
-Mat fitLine(vector<Mat> pointsToFit){
-unsigned i;
-double epsilon = 0.1; 
-double W = 1; 
-double c = 0; 
-double Af, Bf, Cf;
-Mat M = Mat::zeros(3,3,CV_32FC1);
-Mat N = M.clone();
-Mat Vo = (Mat_ < float >(3, 3) << pow(epsilon,2),0,0,0,pow(epsilon,2), 0, 0, 0, 1);
-int conta = 0;
-while(true){
-   for(i = 0;i < pointsToFit.size();++i){
-      Mat pts = pointsToFit[i].clone();
-      M += W*pts*pts.t();
-      N += W*Vo;
-      //cout<<M<<endl;
-   }
-   M = M/pointsToFit.size();
-   N = N/pointsToFit.size();
-   Mat eigenValues;
-   Mat eigenVectors;
-  
-   eigen(M-c*N,eigenValues,eigenVectors);
-   
-   cout<<"eigenValues: "<<eigenValues<<endl;
-   float el = eigenValues.at<float>(2,0);
-   Mat en = eigenVectors.row(2).t();
+Mat fitLine (vector < Mat > pointsToFit, double tolEl)
+{
+   unsigned i;
+   double epsilon = 0.1;
+   double W = 1;
+   double c = 0;
+   double Af, Bf, Cf;
+   double minEl;
+   Mat M = Mat::zeros (3, 3, CV_64FC1);
+   Mat N = M.clone ();
+   Mat Vo =
+      (Mat_ < double >(3, 3) << pow (epsilon, 2), 0, 0, 0, pow (epsilon, 2), 0,
+       0, 0, 1);
+   int conta = 0;
 
-   conta++;
-   if(abs(el)<0.000003){
-      Af = en.at<float>(2,0);
-      Bf = en.at<float>(2,1);
-      Cf = en.at<float>(2,2);
-      break;
-   }else{
-      if(conta>100){
-         cout<<"Maximas iteraciones alcanzadas"<<endl;
+   minEl = 10e10;
+   while (true)
+   {
+      for (i = 0; i < pointsToFit.size (); ++i)
+      {
+         Mat pts = pointsToFit[i].clone ();
+         M += W * pts * pts.t ();
+         N += W * Vo;
+      }
+      M = M / pointsToFit.size ();
+      N = N / pointsToFit.size ();
+#ifdef __VERBOSE__
+      cout << "M = " << M-c*N << endl;
+#endif      
+
+      Mat eigenValues;
+      Mat eigenVectors;
+
+      eigen (M - c * N, eigenValues, eigenVectors);
+#ifdef __VERBOSE__
+      cout << "eigenValues  = " << eigenValues << endl ;
+      cout << "eigenVectors = " << eigenVectors << endl << endl;
+#endif      
+      double el;
+      unsigned int idx;
+      Mat en;
+      
+      idx = 0; el = eigenValues.at < double >(0, 0);
+      if (eigenValues.at < double >(1, 0) < el)
+      {
+         el = eigenValues.at < double >(1, 0);
+         idx = 1;
+      }
+      if (eigenValues.at < double >(2, 0) < el)
+      {
+         el = eigenValues.at < double >(2, 0);
+         idx = 2;
+      }
+      en = eigenVectors.row (idx).t ();
+
+      if (abs(el) < minEl)
+         minEl = abs(el);
+
+      conta++;
+
+      if (abs (el) < tolEl)
+      {
+         Af = en.at < double >(0, 0);
+         Bf = en.at < double >(1, 0);
+         Cf = en.at < double >(2, 0);
          break;
       }
+      else
+      {
+         if (conta > 100)
+         {
+            cout << "Maximas iteraciones alcanzadas" << endl;
+            break;
+         }
+      }
+      cout <<  "Vo - " << Vo << endl << "en = " << en << endl; 
+      W = 1.0 / en.dot (Vo * en);
+      c = (c + el) / en.dot (N * en);
+      // cout<<"conta = "<<conta<<"  c = "<<c<<" W = "<<W<<endl; 
    }
-   W = 1.0/en.dot(Vo*en);
-   c = (c + el )/ en.dot(N*en);
-  // cout<<"conta = "<<conta<<"  c = "<<c<<" W = "<<W<<endl; 
-}
-Mat line = (Mat_<float>(1,3)<<Af,Bf,Cf);
-return line;
+   Mat line = (Mat_ < double >(1, 3) << Af, Bf, Cf);
+   return line;
 
 }
-

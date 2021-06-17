@@ -1,5 +1,7 @@
 
+#CXXFLAGS = -Wall -g -D__VERBOSE__ -I ./include/ 
 CXXFLAGS = -Wall -g -I ./include/ 
+
 all: ejecutableFocusingMeasures ejecutableFocusingMeasures2 PuntoDeFuga2 testSortContours testMomentsMetricA testMomentsMetricB
 
 ejecutableFocusingMeasures: FocusingMeasures.cpp

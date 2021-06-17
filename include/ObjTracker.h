@@ -40,7 +40,7 @@ struct trackedObj
         wCounter = o.wCounter;
     }
     
-    virtual float Distance (const trackedObj &o) {return 0;};
+    virtual double Distance (const trackedObj &o) {return 0;};
     
     virtual std::string repr(){return std::string();};
 };
@@ -61,7 +61,7 @@ struct temporalObjsMem
     long long *tStamps; //> Timestamps. As many as maxSeq
     unsigned int idx;
     unsigned int waitingCounter; //> The number of iterarions an object with MISSING status will stay in that state before being set as NOTDEFINED
-    float distThr; //> Distance threshold. This threshold is used to distinguish when two object are similar enough or not.
+    double distThr; //> Distance threshold. This threshold is used to distinguish when two object are similar enough or not.
     
     //Initialize an empty object array.
     temporalObjsMem (int wc=10)
@@ -75,10 +75,10 @@ struct temporalObjsMem
     }
     
     /*!
-     \func temporalObjsMem(int mEl, int mSq, float dThr = FLT_MAX) //constructor.
+     \func temporalObjsMem(int mEl, int mSq, double dThr = FLT_MAX) //constructor.
      /brief temporalObjsMem constructor, initializes a temporal object array with 
      */
-    temporalObjsMem(int mEl, int mSq, int wc, float dThr = FLT_MAX)
+    temporalObjsMem(int mEl, int mSq, int wc, double dThr = FLT_MAX)
     {
         Table = 0;
         tStamps = 0;
@@ -132,7 +132,7 @@ struct temporalObjsMem
     void addDescriptors(std::vector<Ob> &o, long long ts)
     {
         unsigned int i, j, idxPrev, best;
-        float tmp, d;
+        double tmp, d;
 
         idxPrev = idx == 0 ? maxSeq - 1:  idx - 1;
         tStamps[idx] = ts;

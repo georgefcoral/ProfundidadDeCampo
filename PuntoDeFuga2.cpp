@@ -15,7 +15,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <frameData.h>
-#include "deepFunctions2.h"
+#include <deepFunctions2.h>
 #include <ObjTracker.h>
 #include <sortContours.h>
 
@@ -57,7 +57,7 @@ struct objDescriptor:public trackedObj
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
-   float Distance (const trackedObj & o)
+   double Distance (const trackedObj & o)
    {
       objDescriptor *p = (objDescriptor *) & o;
 
@@ -174,7 +174,7 @@ int main (int argc, char **argv)
    {
       vector < vector < Point > > tmpContours;
       frameData fD, fDo;
-      vector < float >labels;
+      vector < double >labels;
       istringstream iss (file);
       vector < objDescriptor > objs;
 
@@ -210,8 +210,8 @@ int main (int argc, char **argv)
 
          fD.mu.push_back (mo);
 
-         cM = Point2f (static_cast < float >(mo.m10 / (mo.m00 + 1e-5)),
-                       static_cast < float >(mo.m01 / (mo.m00 + 1e-5)));
+         cM = Point2f (static_cast < double >(mo.m10 / (mo.m00 + 1e-5)),
+                       static_cast < double >(mo.m01 / (mo.m00 + 1e-5)));
          fD.mc.push_back (cM);
 
          HuMoments (mo, mH.mH);
@@ -238,27 +238,33 @@ int main (int argc, char **argv)
    fOut.open("tracking.txt");
    fOut2.open("tracking2.py");
    cout << "T = [";
-   unsigned int k = 0;
    cout<<" tObjs.maxSeq: "<<tObjs.maxSeq<<endl;
    cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
 
 //   double xs[] = {400,350,250,200,150};
   // double ys[] = {400,250,190,150,100};
-   for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
+
+   vector<Mat> linesToFit;
+   //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
+   for (j = 0; j < 18; ++j)//Número de objetos
    {
       vector<Mat> pointsToFit;
-      for (j=0;j<tObjs.maxElements;++j)//Número de objetos
+      //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
+      for (i = 0; i < 4; ++i)//Numero de frames
       {
-      fOut<<tObjs.Table[j][i].mc.x<<","<<tObjs.Table[j][i].mc.y<<endl;
-      Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[j][i].mc.x,tObjs.Table[j][i].mc.y,1);
-      //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
-      pointsToFit.push_back(pts);
+         fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
+         Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[i][j].mc.x,tObjs.Table[i][j].mc.y,1);
+         //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
+         pointsToFit.push_back(pts);
       }
 
-      //cout<<pointsToFit[0].t()<<endl;
-      cout<<fitLine(pointsToFit)<<endl;
-
+      Mat L = fitLine(pointsToFit, 0.0003).t();
+      
+      linesToFit.push_back(L);
+      cout << "L[" << j << "] = " << L.t() << endl; 
    }
+   Mat puntoDeFuga = fitLine(linesToFit, 0.0003);
+   cout << "Punto de Fuga = " << puntoDeFuga << endl;
 
    //Codigo Ajuste de puntos a una linea.
    
