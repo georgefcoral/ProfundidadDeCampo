@@ -234,16 +234,9 @@ int main (int argc, char **argv)
       t++;
    }
 
-   ofstream fOut,fOut2;
-   fOut.open("tracking.txt");
-   fOut2.open("tracking2.py");
-   cout << "T = [";
    cout<<" tObjs.maxSeq: "<<tObjs.maxSeq<<endl;
    cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
-
-//   double xs[] = {400,350,250,200,150};
-  // double ys[] = {400,250,190,150,100};
-
+   //Codigo Ajuste de puntos a una linea.
    vector<Mat> linesToFit;
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
    for (j = 0; j < 18; ++j)//Número de objetos
@@ -252,7 +245,7 @@ int main (int argc, char **argv)
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
       for (i = 0; i < 4; ++i)//Numero de frames
       {
-         fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
+         //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
          Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[i][j].mc.x,tObjs.Table[i][j].mc.y,1);
          //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
          pointsToFit.push_back(pts);
@@ -264,67 +257,21 @@ int main (int argc, char **argv)
       cout << "L[" << j << "] = " << L.t() << endl; 
    }
    Mat puntoDeFuga = fitLine(linesToFit, 0.0003);
-   cout << "Punto de Fuga = " << puntoDeFuga << endl;
-
-   //Codigo Ajuste de puntos a una linea.
-   
-
-   fOut2.close();
-   fOut.close();
+   cout << "Punto de Fuga = " << puntoDeFuga<< endl;
+   int ptx,pty;
+   ptx = puntoDeFuga.at<double>(0,0)/puntoDeFuga.at<double>(0,2);
+   pty = puntoDeFuga.at<double>(0,1)/puntoDeFuga.at<double>(0,2);
+   cout<<"Punto de Fuga en cordenadas de la imagen: ("<<ptx<<","<<pty<<")"<<endl;
+   Point2f pf = Point2f(ptx,pty);
+   Mat outImage;
+   cvtColor (Frames[0].Image,outImage, COLOR_GRAY2RGB);
+   namedWindow ("pf", 1);
+   circle(outImage,Point(ptx,pty),5,Scalar(0,0,255),FILLED,LINE_8);
+   imshow("pf",outImage);
+   waitKey(0);
+   destroyWindow ("pf");
    infile.close ();
    fileOut.close ();
    return 0;
 }
 
-/*
-   for (i=0;i<tObjs.maxSeq;++i)
-   {
-    fOut2<<"[";
-    for (j=0;j<tObjs.maxElements;++j)
-    {
-      fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl; 
-     if (tObjs.Table[i][j].status == DEFINED)
-         cout << tObjs.Table[i][j].mc.x << ", "
-              << tObjs.Table[i][j].mc.y << ", ";
-      else
-         cout << "0, 0, ";
-    }
-    }  
-
-
-    if (tObjs.Table[i][j].status == DEFINED){
-      cout << tObjs.Table[i][j].mc.x << ", "
-           << tObjs.Table[i][j].mc.y << ";" << endl;
-    }
-   else{
-      cout << "0, 0;" << endl;
-   }
-   }
-
-   */
-
-
-
-/*for (j=0;j<tObjs.maxElements-1;++j)//Número de objetos
-{
-
-   fOut<<tObjs.Table[0][j].mc.x<<","<<tObjs.Table[0][j].mc.y<<","<<
-      tObjs.Table[1][j].mc.x<<","<<tObjs.Table[1][j].mc.y<<","<<
-      tObjs.Table[2][j].mc.x<<","<<tObjs.Table[2][j].mc.y<<","<<
-      tObjs.Table[3][j].mc.x<<","<<tObjs.Table[3][j].mc.y<<","<<
-      tObjs.Table[4][j].mc.x<<","<<tObjs.Table[4][j].mc.y<<","<<
-      tObjs.Table[5][j].mc.x<<","<<tObjs.Table[5][j].mc.y<<","<<
-      tObjs.Table[6][j].mc.x<<","<<tObjs.Table[6][j].mc.y<<","<<
-      tObjs.Table[7][j].mc.x<<","<<tObjs.Table[7][j].mc.y<<","<<
-      tObjs.Table[8][j].mc.x<<","<<tObjs.Table[8][j].mc.y<<","<<
-      tObjs.Table[9][j].mc.x<<","<<tObjs.Table[9][j].mc.y<<","<<
-      tObjs.Table[10][j].mc.x<<","<<tObjs.Table[10][j].mc.y<<","<<
-      tObjs.Table[11][j].mc.x<<","<<tObjs.Table[11][j].mc.y<<","<<endl;
-
-      for(i=0;i<tObjs.maxSeq-1;++i){
-   fOut<<"mc"+  to_string(i)+",";
-}
-fOut<<"mc"+  to_string(i)<<endl;
-
-
-}*/
