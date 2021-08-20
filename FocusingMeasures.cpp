@@ -24,6 +24,8 @@ constexpr int FLOAT_MAX = 1;
 random_device rd;
 default_random_engine eng(rd());
 uniform_real_distribution<float> distr(FLOAT_MIN, FLOAT_MAX);
+
+
 String image_path;
 String file;
 const String outDir = "Outputs/";

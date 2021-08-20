@@ -18,7 +18,8 @@
 using namespace cv;
 using namespace std;
 
-Mat cambia (Mat M)              //Imagen Negativa.
+
+Mat cambia (Mat M)              
 {
    int i, j;
    double *ptr;

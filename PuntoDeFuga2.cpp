@@ -26,15 +26,51 @@ String image_path;
 String file;
 RNG rng (12345);
 
+
+/*!
+\struct objDescriptor 
+\brief Esta clase guarda contiene las características de un cuadro, con la finalidad de realizar un seguimiento múltiple a cada uno de los objetos de interés.
+*/
+
 struct objDescriptor:public trackedObj
 {
-   int idxFrame, idxObj;
+   /*!
+   \var int idxFrame;
+   \brief Contiene el identificador de cada cuadro
+   */
+   int idxFrame;
+    /*!
+   \var int idxObj;
+   \brief Contiene el identificador de cada objeto en cada cuadro.
+   */
+   int idxObj;
+    /*!
+   \var momHu momentsHu;
+   \brief Variable de tipo momHu que contiene a los 7 valores que representan a los momentos de Hu..
+   */
    momHu momentsHu;
+   /*!
+   \var Point2f mc;
+   \brief Contiene al centro de masa de cada objeto en coordenadas de la imagen.
+   */
    Point2f mc;
+
+   /*!
+   \fn objDescriptor()
+   \brief Constructor que inicializa a idxFrame e idxObj.
+   */
      objDescriptor ()
    {
       idxFrame = idxObj = -1;
    }
+   /*!
+      \fn objDescriptor (const frameData & F, int iF, int io)
+      \brief Constructor de inicialización, asigna valores a idxFrame, idObj, momentsHu y mc.
+      \param frameData &F
+      \param int iF
+      \param int io
+      
+   */
    objDescriptor (const frameData & F, int iF, int io)
    {
       idxFrame = iF;
@@ -42,6 +78,12 @@ struct objDescriptor:public trackedObj
       momentsHu = F.momentsHu[idxObj];
       mc = F.mc[idxObj];
    }
+
+   /*!
+      \fn objDescriptor (const objDescriptor & O)
+      \brief Constructor de copia. Crea un objeto a partir de otro objeto de esta misma clase. 
+      \param objDescriptor &O
+   */
    objDescriptor (const objDescriptor & O)
    {
       idxFrame = O.idxFrame;
@@ -49,7 +91,11 @@ struct objDescriptor:public trackedObj
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
-
+   /*!
+      \fn void operator = (const objDescriptor & O)
+      \brief Sobre carga del operador igual (=).
+      \param objDescriptor &O
+   */
    void operator = (const objDescriptor & O)
    {
       idxFrame = O.idxFrame;
@@ -57,13 +103,22 @@ struct objDescriptor:public trackedObj
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
+    /*!
+      \fn double Distance (const trackedObj & o)
+      \brief Función que incluye la distancia entre dos objetos con respecto a sus centros de masa.
+      \param trackedObj & o
+      \return distance
+    */   
    double Distance (const trackedObj & o)
    {
       objDescriptor *p = (objDescriptor *) & o;
 
       return pow (p->mc.x - mc.x, 2.) + pow (p->mc.y - mc.y, 2.);
    }
-
+   /*!
+      \fn repr ()
+      \brief Función que imprime variables para su depuración.
+    */  
    string repr ()
    {
       stringstream ss;
