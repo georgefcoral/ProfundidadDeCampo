@@ -14,21 +14,20 @@
 #include <iomanip>
 #include <unistd.h>
 
-
 using namespace cv;
 using namespace std;
 
-
 constexpr int FLOAT_MIN = 0;
 constexpr int FLOAT_MAX = 1;
+const double PI = 3.141592653;
 random_device rd;
 default_random_engine eng(rd());
 uniform_real_distribution<float> distr(FLOAT_MIN, FLOAT_MAX);
 
-
 String image_path;
 String file;
 const String outDir = "Outputs/";
+
 
 Mat cambia(Mat M)//Imagen Negativa.
 {
@@ -72,17 +71,12 @@ Mat gradienteMax(Mat image){
          outImage.at<double>(i,j) = output.at<double>(i,j);
       }
    }
-
    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-
-
-   
-
    //imwrite("Outputs/GMAX-"+file,outImage);
    return output;
 }
 
-double robertsGradient(Mat image){
+double robertsGradient(Mat image,Mat &dst){
    double value = 0;
    Mat outImage(image.size(),CV_64FC1,Scalar(0));
 
@@ -94,13 +88,13 @@ double robertsGradient(Mat image){
                         pow(image.at<uchar>(i+1,j) - image.at<uchar>(i,j+1),2);
       }
    }
-
+   dst = outImage.clone();
   // normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("Outputs/RobertsG-"+file,outImage);
+   //imwrite("Outputs/RobertsG-"+file,outImage);
    return value;
 }
 
-double tenengrad(Mat image){
+double tenengrad(Mat image,Mat& dst){
    Mat outImage(image.size(),CV_64FC1,Scalar(0));
    Mat temp1, temp2;
    temp2 = image.clone();
@@ -118,11 +112,12 @@ double tenengrad(Mat image){
       }
    }
    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("Outputs/tenengrad-"+file,outImage);
+   dst = outImage.clone();
+
    return value;
 }
 
-double brennerGradient(Mat image){
+double brennerGradient(Mat image,Mat& dst){
    double value = 0;
    Mat outImage(image.size(),CV_64FC1,Scalar(0));
 
@@ -134,11 +129,12 @@ double brennerGradient(Mat image){
       }
    }
    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("Outputs/brennerGradient-"+file,outImage);
+   dst = outImage.clone();
+
    return value;
 }
 
-double variance(Mat image){
+double variance(Mat image,Mat& dst){
    double value =0;
    double mean = 0;
    Mat outImage(image.size(),CV_64FC1,Scalar(0));
@@ -158,12 +154,16 @@ double variance(Mat image){
          value = value + pow(image.at<uchar>(i,j)-mean,2);
       }
    }
-   normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
-   outImage = cambia(outImage);
-   imwrite("Outputs/variance-"+file,outImage);
+   
+   //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+   //outImage = cambia(outImage);
+   dst = outImage.clone();
    return value;
 }
-double TSobel(Mat image, double alpha)
+
+
+
+double TSobel(Mat image,Mat & dst , double alpha)
 {
    
    Mat outImage;
@@ -201,42 +201,88 @@ double TSobel(Mat image, double alpha)
          tw_value = tw_value +(Tw_image.at<uchar>(i,j))*(Tw_image.at<uchar>(i,j));
       }
    }
-
-   threshold( Tw_image, Tw_image, 20, 255, 0);
+   //threshold( Tw_image, Tw_image, 20, 255, 0);
    //normalize(Tw_image,outImage,0,255,NORM_MINMAX,-1,noArray());
-   imwrite("Outputs/tw"+file,Tw_image);
+   imwrite("Out.jpg",Tw_image);
+   dst = Tw_image.clone();
    return tw_value;
-
-   
 }
 
-Mat noiseSaltAndPepper(Mat image, double prob){
-   
-
-   Mat imageNoised=image.clone();//(image.rows, image.rows, CV_8UC1, Scalar(0));
-
-   double threshold = 1- prob;
-   float numrand;
-   for (int i = 0; i <image.rows; i++)
-   {
-      for (int j = 0; j < image.cols; j++)
-      {
-         numrand = distr(eng);
-         if(numrand < prob){
-            imageNoised.at<uchar>(i,j) = 0;
-         }else{
-            if(numrand>threshold){
-               imageNoised.at<uchar>(i,j) = 255;
-            }else{
-               imageNoised.at<uchar>(i,j) =image.at<uchar>(i,j);
-            }
-         }
-      }
-   }
 
 
+double meanMat(Mat input){
+	double sum=0;
+	for(int i=0;i<input.rows;i++){
+		for(int j=0;j<input.cols;j++){
+			sum=sum+input.at<uchar>(i,j);
+		}
+	}
+	return sum/(input.rows*input.cols);
+}
 
-   return imageNoised;
+double variance2(Mat input,Mat &dst)
+{
+	Mat outImage(input.size(),CV_64FC1,Scalar(0));
+    double var=0;
+    double meanInput = meanMat(input);
+    double totalSize=input.rows*input.cols;
+    for(int i=0;i<input.rows;i++){
+    	for(int j=0;j<input.cols;j++){
+    		int pixelVal=input.at<uchar>(i,j);
+    		var=var+((pixelVal*pixelVal)-(meanInput*meanInput));
+    		outImage.at<double>(i,j) = ((pixelVal*pixelVal)-(meanInput*meanInput))/(totalSize);
+    	}
+    }
+    normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    //cout<<outImage<<endl;
+     dst = outImage.clone(); 
+    return var;
+}
+
+double energyG(Mat input,Mat& dst){
+	double var;
+	Mat outImage(input.size(),CV_64FC1,Scalar(0));
+    Mat dx = (Mat_ < double >(1, 2) << -1.0, 1.0);
+    Mat dy = (Mat_ < double >(2, 1) << -1.0, 1.0);
+    Mat gx(input.cols, input.rows, CV_64FC1, Scalar(0));
+    Mat gy(input.cols, input.rows, CV_64FC1, Scalar(0));
+
+    for(int i=0;i<input.rows-1;i++){
+    	for(int j=0;j<input.cols-1;j++){
+    		gx.at<double>(i,j)=input.at<uchar>(i+1,j)-input.at<uchar>(i,j);
+    		gy.at<double>(i,j)=input.at<uchar>(i,j+1)-input.at<uchar>(i,j);
+    		var = var + (gx.at<double>(i,j)*gx.at<double>(i,j)) +(gy.at<double>(i,j)*gy.at<double>(i,j));
+    		outImage.at<double>(i,j) = (gx.at<double>(i,j)*gx.at<double>(i,j)) +(gy.at<double>(i,j)*gy.at<double>(i,j));
+    	}
+    }
+    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    dst = outImage.clone(); 
+ 
+    
+	return var;
+}
+
+
+
+double energyL(Mat input, Mat& dst)
+{
+	double var = 0;
+	Mat outImage(input.size(),CV_64FC1,Scalar(0));
+    Mat kernel = (Mat_ < double >(3, 3) << -1.0, -4.0, -1.0,
+		  -4.0, 20.0, -4.0,
+		  -1.0, -4.0, -1.0);
+    Mat laplacianEImage;
+    filter2D(input, laplacianEImage, CV_64FC1, kernel);
+    for(int i=0;i<input.rows-1;i++){
+    	for(int j=0;j<input.cols-1;j++){
+    		var = var + laplacianEImage.at<double>(i,j)*laplacianEImage.at<double>(i,j);
+    		outImage.at<double>(i,j) = laplacianEImage.at<double>(i,j)*laplacianEImage.at<double>(i,j);
+    	}
+    }
+    //normalize(outImage,outImage,0,255,NORM_MINMAX,-1,noArray());
+    dst = outImage.clone();
+    return var;
+
 }
 
 
@@ -248,35 +294,22 @@ int main(int argc, char **argv)
        cerr << endl; 
       exit (1);
     }
-int t = 0;
-String dataFiles = "myFile.txt";
-ifstream infile(dataFiles); 
-String measureValues = "measureValuesConRuido.res";
-String measureValues2 = "tSobelConRuido.res";
-ofstream outfile(measureValues);
-ofstream outfile2(measureValues2);
-Mat image;
-cout<<"Procesando imágenes: "<<endl;
-while (getline(infile,file)){
-   istringstream iss(file);
-   //names[t]= file;
-   image_path = string(argv[1])+"/" + file;
-   double valorDeUmbral = atoi(argv[2]);
-   Mat image2 = imread(image_path, IMREAD_GRAYSCALE);
+   String image_path = String (argv[1]);
+   Mat img = imread(image_path, IMREAD_GRAYSCALE);
+   if(img.empty())
+   {
+        std::cout << "Could not read the image: " << image_path << std::endl;
+        return 1;
+   }
 
-   //image = noiseSaltAndPepper(image2,0.001);  
-   image = image2.clone();
-   //imshow("Frame",image );
-   //waitKey(0);
-   //outfile<<TSobel(image,0.4)<<"\t"<<robertsGradient(image)<<"\t"<<tenengrad(image)<<"\t"<<brennerGradient(image)<<"\t"<<variance(image)<<endl;
-   double testing = TSobel(image,0.2);
-   /*outfile2<<TSobel(image,0.1)<<"\t"<<TSobel(image,0.2)<<"\t"<<TSobel(image,0.3)<<"\t"<<TSobel(image,0.4)
-   <<"\t"<<TSobel(image,0.6)<<"\t"<<TSobel(image,0.8)<<"\t"<<TSobel(image,1)<<endl;*/
-   cout<<"Secuencia: "<<t<<endl;
-   t++;
-}
-cout<<"Terminado"<<endl;
-infile.close();
-outfile.close();
+   Mat dst;
+   double temp = TSobel(img,dst,1);
+   cout<<dst.type()<<endl;
+   namedWindow("Frame", WINDOW_NORMAL);
+   imshow("Frame",dst);
+   waitKey(0);
+   destroyWindow ("Frame");
+
 return 0;
 }
+

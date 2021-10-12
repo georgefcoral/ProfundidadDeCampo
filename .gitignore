@@ -1,6 +1,12 @@
 # Prerequisites
 *.d
 *~
+PuntoDeFuga
+PuntoDeFuga2
+err
+Distancias.txt 
+myfile.txt
+*.res
 
 ejecutableDescriptors
 

@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include<fftw3.h>
 #include <FourierDescriptor.h>
-#include "deepFunctions.cpp"
+#include "deepFunctions.h"
 
 using namespace cv;
 using namespace std;
@@ -37,7 +37,8 @@ int main (int argc, char **argv)
    int dilation_type = 2;
    int dilation_size = 2;
    bool Umbraliza = true;
-   double umbralDistance = 50.;
+   double umbralDistance = 60.;
+   double umbralHu= 500.;
   
    String dataFiles, OutDir;
    ifstream infile;
@@ -51,6 +52,7 @@ int main (int argc, char **argv)
    vector < Mat > tempMatHU (100);
    vector < int >contornoSize;
    vector <vector<int>> globalCorr(20);
+   vector <Mat> Imagenes;
    //vector <vector<double>>areasPrev(100);
 
 
@@ -72,12 +74,22 @@ int main (int argc, char **argv)
       umbralDistance = atof(argv[3]);
       if (umbralDistance < 0.)
       {
-         cerr << "El umbral minimo de distancia tiene que ser mayor que 0"
+         cerr << "El umbral de distancia minimo tiene que ser mayor que 0"
               << endl;
          exit(1);
       }
-      if (argc > 4)
-         Umbraliza = false;
+      if (argc>4)
+      {
+         umbralHu = atof(argv[4]);
+         if (umbralHu < 0.)
+         {
+            cerr << "El umbral de Hu minimo  tiene que ser mayor que 0"
+                 << endl;
+            exit(1);
+         }
+         if (argc > 5)
+            Umbraliza = false;
+      }
    }
 
 
@@ -90,6 +102,7 @@ int main (int argc, char **argv)
 
    while (getline (infile, file))
    {
+      Mat tmpImage;
       vector<float> labels;
       istringstream iss (file);
       cout <<"file:\t"<<file<<endl;
@@ -102,6 +115,9 @@ int main (int argc, char **argv)
          cout << "Could not open or find the image" << std::endl;
          return -1;
       }
+
+      tmpImage = image.clone();
+      Imagenes.push_back(tmpImage);
 
       	//Elemento necesario para el ajuste de dilatación.
          Mat element = getStructuringElement (dilation_type,
@@ -199,7 +215,9 @@ int main (int argc, char **argv)
          															HuRespawn,
          															mc,
          															mcRespawn,
+         															Imagenes[t-1], Imagenes[t],
          															labels,
+         															umbralHu,
          															umbralDistance ,
          															t);
 
