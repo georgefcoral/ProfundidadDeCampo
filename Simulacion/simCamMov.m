@@ -1,4 +1,4 @@
-function[Idx] = simCamMov(Pts, K, R, T)
+function[Idx, TT] = simCamMov(Pts, K, R, T, incZ)
    figure(1);
    clf;
 
@@ -31,10 +31,7 @@ function[Idx] = simCamMov(Pts, K, R, T)
 
    % Definimos la profundidad de campo.
    pCampo = (zMax-zMin)/25;
-
-   % El incremento de movimiento de la camara (0.5mm)
-   incZ =  0.0005; 
-
+   
    % Distancia de avance de la cámara.
    zTravel=0.6;
    N = round(zTravel/incZ);
@@ -46,11 +43,13 @@ function[Idx] = simCamMov(Pts, K, R, T)
    z=zMax;
    nP = length(Pts(:,3));
    Idx = zeros(N, nP);
+   TT = zeros(N, 3);
    for i = 1:N
       idx=find(Pts(:,3)<z & Pts(:,3)>=(z-pCampo));
       Idx(i,idx) = 1;  
       X = [Pts(idx,:)';ones(1,length(idx))];
       x = K * [R, T] * X;
+      TT(i, :) = T';
       [r,c] = size(x);
       for j=1:c
          x(:,j) /= x(3,j);
