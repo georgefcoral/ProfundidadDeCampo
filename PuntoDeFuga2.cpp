@@ -165,17 +165,19 @@ int main (int argc, char **argv)
    ofstream fileOut ("descriptorsFrame.res");
 
    /*VALIDACIÓN DE PARAMETROS */
-   if (argc < 4)
+   if (argc < 3)
    {
       cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] <<
-         "ListaArchivos" << " [umbralArea]" << "[umbralDistance]" <<
-         " [umbralHu]" << endl << endl <<
+         "ListaArchivos" << "UmbralFrame" << endl << endl <<
          "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
-         << endl;
+         <<"\tUmbralFrame -> cantidad de cuadros a validar." 
+         <<endl;
    }
 
    dataFiles = String (argv[1]);
 
+   int umbralFrame = atoi(argv[2]);
+/*
    if (argc > 2)
    {
       umbralArea = atof (argv[2]);
@@ -206,6 +208,7 @@ int main (int argc, char **argv)
          }
       }
    }
+   */
 
    cerr << "Umbral Area: " << umbralArea << endl;
    cerr << "Umbral Distancia: " << umbralDistance << endl;
@@ -296,18 +299,19 @@ int main (int argc, char **argv)
    cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
    //Codigo Ajuste de puntos a una linea.
    vector<Mat> linesToFit;
-   unsigned int numPts =10;
+
+
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
    realPoints<<"RP = [";
    for (j = 0; j < 18; ++j)//Número de objetos
    {
       vector<Mat> pointsToFit;
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
-      for (i = 0; i < numPts; ++i)//Numero de frames
+      for (i = 0; i < unsigned(umbralFrame); ++i)//Numero de frames
       {
          //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
          Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[i][j].mc.x,tObjs.Table[i][j].mc.y,1);
-         if(i<(numPts-1)){
+         if(i<(unsigned(umbralFrame)-1)){
             realPoints<<"["<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<","<<"1],";
          }else{
             realPoints<<"["<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<","<<"1];";
