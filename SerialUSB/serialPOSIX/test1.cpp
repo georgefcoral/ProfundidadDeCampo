@@ -1,15 +1,36 @@
 #include <iostream>
 #include <serialPOSIX.h>
-
+#include <cstring>
+#include <cmath>
 using namespace std;
+
+string encode(int step){
+
+    if(step > 0){//Forward Code
+        return "2" + to_string(abs(step)) + "a";
+    }
+    if(step == 0){//Stop code
+        return "0" + (string)"a";
+    }
+
+    if(step < 0){//Backward code
+        return "1" + to_string(abs(step)) + "a";
+    }
+    return "0" + (string)"a";
+}
+
 
 int main(int argc, char **argv)
 {
     ssize_t n;
-    char *d;
-    char valor = 0;
+    ssize_t n2;
     serialPOSIX comm1(115200);
-
+    string str = "0100";
+    char *buff = new char[str.length()];  
+    char *data = new char[1]; 
+    int epochs = 5;
+    int steps[epochs] = {0,-15, 11,879,-785};
+    int k = 0;//Its a counter. 
     if (argc < 2)
     {
         cerr << "Error: Faltan argumentos" << endl;
@@ -27,39 +48,36 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    
-    do
-    {
-        do
-        {
-            n = comm1.send(&valor, 1);
-            if (n >= 0)
-                break;
-            cerr << "Error al enviar el valor " << valor << endl;
-            usleep(10000);
-        } while(true);
-        
-        cout << "Se enviaron " << n << " bytes: " << (int) valor<< endl;
-        cout.flush();
-        
-        do
-        {
-            d = comm1.receive(1, &n);
-            if (d != NULL)
-                break;
-            usleep(100000);
-        } while (true);
-        
-        valor = *d;
-            
-        cout << "se recibio el valor  : "<< (int)valor << endl << endl;
-            
-            
-        valor = (valor + 1) % 128;
-            
-        //sleep(2);
-        
-    } while (1);
 
+    do
+    { 
+        str = encode(steps[k]);
+        strcpy(buff, str.c_str());
+
+        //Enviar Datos
+        do{  
+        n = comm1.send(buff);
+        cout<<"Cadena "<<buff<<" enviada"<<endl;
+        cout<<"El valor de n es: "<<n<<endl;
+        if (n >= 0)
+            break;
+        usleep(10000);
+        }while(1);
+
+        //Recibir datos
+        do{
+            data = comm1.receive(1, &n2);
+            // if(data!= NULL && n2>=0){                    
+            //     cout<<"Se recibió un "<<data<<"!"<<endl;
+            //     break;
+            // }
+        }while(1);
+
+        k++;
+    } while(k<epochs);
+
+    delete [] buff;
     return 0;
 }
+
+
