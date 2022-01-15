@@ -16,7 +16,7 @@ Threshold=3.84*sigma2;
 
 %Generate a random index, used to draw samples of pair of points randomly.
 R=rand(tsamples,1);
-[S,I]=sort(R);
+[S,Indice]=sort(R);
 k=0;
 
 
@@ -24,19 +24,20 @@ for i=1:Nsamples
 	A=ones(2,2);
    B=ones(2,1);
 
-	% Select a pair of points randomly and set up the matrices needed to solve
-	% the problem. 
-   for j=1:2
-      x=X(I(j+k));
-      A(j,:)=[x, 1];
-      B(j,1)=Y(I(j+k));
-   end
-	if (k+2 >=tsamples)
-		k=0;
-	else
-		k=k+2;
-	end
-
+	% Select a pair of points randomly and set up the matrices needed to solve the problem. 
+   idx1 = mod(round(1000*rand(1)),tsamples-1)+1;
+   idx2 = idx1;
+   while (idx1 == idx2)
+      idx2 = mod(round(1000*rand(1)),tsamples-1)+1;
+      [idx1, idx2]
+   end 
+   A(1,:)=[X(idx1), 1];
+   A(2,:)=[X(idx2), 1];
+   B(1,1)=Y(idx1);
+   B(2,1)=Y(idx2);
+   A
+   B
+   
 	%Find line that fit the sample points selected earlier. 
    sol=A\B;
    

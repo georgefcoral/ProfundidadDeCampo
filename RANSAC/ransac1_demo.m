@@ -14,7 +14,6 @@ Threshold=3.84*sigma2;
 
 %Generate a random index, used to draw samples of pair of points randomly.
 R=rand(tsamples,1);
-[S,I]=sort(R);
 k=0;
 
 tstd=zeros(Nsamples*2,2);
@@ -25,20 +24,17 @@ for i=1:Nsamples
 
 	% Select a pair of points randomly and set up the matrices needed to solve
 	% the problem. 
-   for j=1:2
-      x=X(I(j+k));
-      A(j,:)=[x, 1];
-      B(j,1)=Y(I(j+k));
-		Sx(j)=x;
-		Sy(j)=Y(I(j+k));
-		tstd(j+k)=x;
-		tstd(j+k,2)=Sy(j);
-   end
-	if (k+2 >=tsamples)
-		k=0;
-	else
-		k=k+2;
-	end
+   idx1 = mod(round(1000*rand(1,1)),tsamples-1)+1;
+   idx2 = idx1;
+   while (idx1 == idx2)
+      idx2 = mod(round(1000*rand(1,1)),tsamples-1)+1;
+   end 
+   x=X(I(j+k));
+   A(1,:)=[X(idx1), 1];
+   A(2,:)=[X(idx2), 1];
+   B(1,1)=Y(idx1);
+   B(2,1)=Y(idx2);
+
 
 	%Estimate the minimum distance from each point in the set to the solution found before.
    sol=A\B;

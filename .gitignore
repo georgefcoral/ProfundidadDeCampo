@@ -42,3 +42,8 @@ ejecutable
 *.out
 *.app
 myFile.txt
+ejecutableFocusingMeasures
+ejecutableFocusingMeasures2
+testMomentsMetricA
+testMomentsMetricB
+testSortContours
