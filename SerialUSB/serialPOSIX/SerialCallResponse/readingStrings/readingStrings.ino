@@ -23,8 +23,8 @@ void setup()
 }
 
 
-double measures[5] = {123.123,94.2,552.50,60.1,0.23};//Simulación de las mediciones en mm.
-
+//double measures[5] = {123.123,94.2,552.50,60.1,0.23};//Simulación de las mediciones en mm.
+String measure = "01234.123";
 
 //This function returns a total step received and the flag for forward, backward a stop.
 int deCode (String buff,int &flag){
@@ -34,11 +34,11 @@ int deCode (String buff,int &flag){
   }
   if(buff.charAt(0) == '1'){
     flag = -1;
-    return buff.toInt();
+    return buff.substring(1,buff.length() -1).toInt();
   }
   if(buff.charAt(0) == '2'){
     flag = 1;
-    return buff.toInt();
+    return buff.substring(1,buff.length()-1 ).toInt();
   }
   return -1;
 }
@@ -46,48 +46,44 @@ int step1;
 int flag = 0;
 String medTemp = "";
 bool ad;
-
+int readyToWrite = 0;
 int k=0;
 void loop()
 {
   
   if (Serial.available())
   {
+    
     do{
       buff = Serial.read();
-      if(buff == 'a')
+      if(buff == 'a')//Si se detecta el caracter 'a' deja de leer.
         break;
       ad = seq.concat(char(buff));
       //Serial.write(seq.charAt(k));
       //k++;
-    }while(1);
-  
-  step1 = deCode(seq,flag);
-  int j = 0;
-    medTemp = String(measures[k]);
-    do{  
-      buffO = medTemp[j];
-      if(j== String(measures[k]).length()-1){
+    }while(true);
+    readyToWrite = 1;
+    step1 = deCode(seq,flag);
+  }else{   
+    if(readyToWrite == 1){
+    int j = 0;
+    do{
+      buffO = measure[j];
+      Serial.write(buffO);
+      if(j==measure.length()){ 
+        readyToWrite = 0;
         break;
       }
-      Serial.write(buffO);
       j++;
-    }while(1);
-    
-//    if(seq !=""){
-//    step1 = deCode(seq,flag);
-//    if(flag == 0){
-//      Serial.write(inChar[0]);
-//    }
-//    if(flag == -1){
-//      Serial.write(inChar[1]);
-//    }
-//    if(flag == 1){
-//       Serial.write(inChar[2]);
-//      }
-//    }
+    }while(true);   
+  }
+ }
+  
+  
+
+
+
     seq = "";
     medTemp = "";
-    k++;
-  }
+   
 }

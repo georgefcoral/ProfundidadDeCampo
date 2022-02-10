@@ -4,6 +4,8 @@
 #include <cmath>
 using namespace std;
 
+
+//Esta función codifica cadena de caracteres 
 string encode(int step){
 
     if(step > 0){//Forward Code
@@ -26,10 +28,11 @@ int main(int argc, char **argv)
     ssize_t n2;
     serialPOSIX comm1(115200);
     string str = "0100";
+    int finish = 0;
     char *buff = new char[str.length()];  
     char *data = new char[1]; 
-    int epochs = 5;
-    int steps[epochs] = {0,-15, 11,879,-785};
+    int iter = 5;
+    int steps[iter] = {0,-15, 11,879,-785};
     int k = 0;//Its a counter. 
     if (argc < 2)
     {
@@ -58,23 +61,39 @@ int main(int argc, char **argv)
         do{  
         n = comm1.send(buff);
         cout<<"Cadena "<<buff<<" enviada"<<endl;
-        cout<<"El valor de n es: "<<n<<endl;
+        cout<<"El valor de1 n es: "<<n<<endl;
         if (n >= 0)
             break;
-        usleep(10000);
+        
         }while(1);
-
+        usleep(10000);
         //Recibir datos
+        int countChars = 0;
         do{
+
             data = comm1.receive(1, &n2);
-            // if(data!= NULL && n2>=0){                    
-            //     cout<<"Se recibió un "<<data<<"!"<<endl;
-            //     break;
-            // }
+            if(data!= NULL && n2>=0){                    
+                cout<<"Se recibió un : "<<data[0]<<endl;
+                if((int)data[0] == 0)
+                    finish = 1;
+            }
+            if(finish == 1){
+                finish = 0;
+                break;
+            }
+            cout<<"countChars: "<<countChars<<endl;
+/*             if(finish == 1){
+                cout<<"Holas";
+                finish = 0;
+                
+            } */
+            countChars++;
+        
         }while(1);
 
         k++;
-    } while(k<epochs);
+        usleep(10000);
+    } while(k<iter);
 
     delete [] buff;
     return 0;
