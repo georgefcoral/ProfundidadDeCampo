@@ -33,7 +33,8 @@ int main(int argc, char **argv)
     char *data = new char[1]; 
     int iter = 5;
     int steps[iter] = {0,-15, 11,879,-785};
-    int k = 0;//Its a counter. 
+    int k = 0;//Its a counter.
+    string received = "";
     if (argc < 2)
     {
         cerr << "Error: Faltan argumentos" << endl;
@@ -68,12 +69,15 @@ int main(int argc, char **argv)
         }while(1);
         usleep(10000);
         //Recibir datos
-        int countChars = 0;
+        //int countChars = 0;
+        received = "";
         do{
-
+            //Argumentos de función son n2,data
             data = comm1.receive(1, &n2);
+           //cout<<"Data: "<<data<<" n2: "<<n2<<endl;
             if(data!= NULL && n2>=0){                    
-                cout<<"Se recibió un : "<<data[0]<<endl;
+                //cout<<"Se recibió un : "<<data[0]<<endl;
+                received += data[0];
                 if((int)data[0] == 0)
                     finish = 1;
             }
@@ -81,16 +85,15 @@ int main(int argc, char **argv)
                 finish = 0;
                 break;
             }
-            cout<<"countChars: "<<countChars<<endl;
+           // cout<<"countChars: "<<countChars<<endl;
 /*             if(finish == 1){
                 cout<<"Holas";
                 finish = 0;
                 
             } */
-            countChars++;
-        
+            //countChars++;
         }while(1);
-
+        cout<<"Cadena recibida: "<<stof(received) + 100 <<endl;
         k++;
         usleep(10000);
     } while(k<iter);

@@ -24,7 +24,7 @@ void setup()
 
 
 //double measures[5] = {123.123,94.2,552.50,60.1,0.23};//Simulación de las mediciones en mm.
-String measure = "01234.123";
+String measure = "13.21";
 
 //This function returns a total step received and the flag for forward, backward a stop.
 int deCode (String buff,int &flag){
