@@ -32,8 +32,8 @@ int main(int argc, char **argv)
     char *buff = new char[str.length()];  
     char *data = new char[1]; 
     int iter = 5;
-    int steps[iter] = {0,-15, 11,879,-785};
-    string stepsString[iter] ={"0.1","-15.0", "11.0","879.0","-785.0"};
+   // int steps[iter] = {0,-15, 11,879,-785};
+    string stepsString[iter] ={"100","50", "150","-200","100"};
     int k = 0;//Its a counter
     string received = "";
     if (argc < 2)
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     do
     { 
-        str = encode(steps[k]);
+        //str = encode(steps[k]);
         strcpy(buff, stepsString[k].c_str());
 
         //Enviar Datos
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
             } */
             //countChars++;
         }while(1);
-        cout<<"Cadena recibida: "<<received  <<endl;
+        cout<<"Distancia : "<<received  <<" mm."<<endl;
         k++;
         usleep(10000);
     } while(k<iter);

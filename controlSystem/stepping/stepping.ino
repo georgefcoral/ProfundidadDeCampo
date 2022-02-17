@@ -6,7 +6,15 @@
 //AccelStepperWithDistances
 
 
+#include "Adafruit_VL53L0X.h"
+#include <AFMotor.h>
 
+
+
+// Connect a stepper motor with 48 steps per revolution (7.5 degree)
+// to motor port #2 (M3 and M4)
+AF_Stepper motor(200, 2);
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 
 
@@ -15,35 +23,50 @@ void setup()
 {
   // start serial port at 9600 bps:
   Serial.begin(115200 );
+  motor.setSpeed(100);
   while (!Serial)
   {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  
+  //motor.setSpeed(100);  // 10 rpm  
+  lox.begin();
+  
+//  if (!lox.begin()) {
+//    Serial.println(F("Failed to boot VL53L0X"));
+//  }
+
 }
-
-
-
 
 //This function returns a total step received and the flag for forward, backward a stop.
-int deCode (String buff,int &flag){
-  if( buff.charAt(0)== '0'){
-    flag = 0;
-    return 0;
+
+int deCodeStepping(String str){
+  AF_Stepper motor(200, 2);
+  int signo = 0;
+  int stepping;
+  String numString;
+  
+  //Se define si es un número positivo o negativo.
+  if(str[0]== '-'){
+    signo = -1;
+    numString = str.substring(1,str.length());
+  }else{
+    signo = 1;
+    numString = str;
   }
-  if(buff.charAt(0) == '1'){
-    flag = -1;
-    return buff.substring(1,buff.length() -1).toInt();
-  }
-  if(buff.charAt(0) == '2'){
-    flag = 1;
-    return buff.substring(1,buff.length()-1 ).toInt();
-  }
-  return -1;
+
+  stepping = signo*(numString.toInt()); 
+
+  return stepping;
 }
 
 
-int step1;
+
+
+
+
+int stepping;
 int flag = 0;
 String medTemp = "";
 bool ad;
@@ -52,48 +75,71 @@ int k=0;
 byte buff;
 byte buffO;
 String seq = "";
-String measure = "13.21";
-
-
+String message = "13.21";
+String sender;
+int sending=-1;
 void loop()
 {
+  VL53L0X_RangingMeasurementData_t measure;
   
   if (Serial.available())
   {
     
-    //do{
-      measure = Serial.readString();
-      //if(buff == 'a')//Si se detecta el caracter 'a' deja de leer.
-       // break;
-      //ad = seq.concat(char(buff));
-     // seq = seq + char(buff);    
-      //Serial.write(seq.charAt(k));
-      //k++;
-    //}while(true);
-
+    message= Serial.readString(); 
+    stepping = deCodeStepping(message);
     
-    readyToWrite = 1;
-    //step1 = deCode(seq,flag);
-
     
-  }else{   
-    if(readyToWrite == 1){
-    int j = 0;
-    do{
-      buffO = measure[j];
-      Serial.write(buffO);
-      if(j==measure.length()){ 
-        readyToWrite = 0;
-        break;
+    //stepping contains de input string convert to int.
+    //steppeing is data obtained by Serial port.
+
+    /*AGREGAR AQUI MOVIMIENTO DEL MOTOR*/
+    
+    if(stepping > 0){
+        motor.setSpeed(100);
+        motor.step(abs(stepping), FORWARD, DOUBLE); 
+    }else{
+      if(stepping < 0){
+        motor.setSpeed(100);
+        motor.step(abs(stepping), BACKWARD, DOUBLE); 
+      }else{
+         motor.setSpeed(100);
+         motor.step(abs(stepping), BACKWARD, DOUBLE); 
       }
+    }
+    //sender = String(stepping);
+    motor.release();
+    delay(3000);
+    readyToWrite = 1;
+    
+    
+    
+  }else{  
+    
+    lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+    
+    if(readyToWrite == 1){
+      
+      if (measure.RangeStatus != 4){  // phase failures have incorrect data
+        sending = measure.RangeMilliMeter;
+      } else {
+        sending = -1;
+      }
+    
+      sender = String(sending);
+      int j = 0;
+      do{
+        buffO = sender[j];
+        Serial.write(buffO);
+        if(j==sender.length()){ 
+          readyToWrite = 0;
+          break;
+        }
       j++;
-    }while(true);   
+      }while(true);   
   }
+
+  
  }
-  
-  
-
-
 
     seq = "";
     medTemp = "";
