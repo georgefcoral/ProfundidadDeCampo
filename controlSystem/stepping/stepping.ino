@@ -108,7 +108,7 @@ void loop()
     }
     //sender = String(stepping);
     motor.release();
-    delay(3000);
+    delay(2000);
     readyToWrite = 1;
     
     

@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     char *data = new char[1]; 
     int iter = 5;
    // int steps[iter] = {0,-15, 11,879,-785};
-    string stepsString[iter] ={"100","50", "150","-200","100"};
+    string stepsString[iter] ={"0","0", "0","0","0"};
     int k = 0;//Its a counter
     string received = "";
     if (argc < 2)
