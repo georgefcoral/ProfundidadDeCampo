@@ -1,0 +1,23 @@
+INCLUDEDIR=$(TOPDIR)/include
+
+# Objetivos
+ARCHIVES = libCamera1394.a
+OBJS = Camera1394.o CameraServer.o
+
+# Banderas
+
+# Dependencias
+$(OBJS): %.o: %.cpp
+Camera1394.o: $(wildcard $(INCLUDEDIR)/*.h)
+libCamera1394.a: $(OBJS)
+
+# Otros objetivos
+EXTRA_TARGETS=copyLib
+EXTRA_CLEAN_TARGETS=cleanLib
+
+copyLib: libCamera1394.a 
+	cp $+ ../lib
+
+.PHONY: cleanLib
+cleanLib:
+	rm -f ../lib/libCamera1394.a 
