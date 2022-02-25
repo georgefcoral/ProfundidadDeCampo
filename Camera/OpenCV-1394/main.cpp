@@ -18,16 +18,19 @@ numero negativo la camara se aleja del objeto.
 const string stepping = "200";
 
 /*# de imagenes a*/
-int iter = 10;#include "opencv2/opencv.hpp"
-#include "opencv2/highgui/highgui.hpp"
+int iter = 10;
 
-#include <Camera1394.h>
+
 int main(int argc, char **argv)
 {
     ofstream MyFile("data.txt");
+    serialPOSIX comm1(115200);
+    Camera1394 C0(0);
+	int cont;
+	Mat frame;
     ssize_t n;
     ssize_t n2;
-    serialPOSIX comm1(115200);
+    
     string str = "0100";
     int finish = 0;
     char *buff = new char[str.length()];  
