@@ -67,7 +67,9 @@ int main()
 #endif
       C0.Release_uFrame_Pointer(idx);
 		imshow( "Camara", frame);
-   	if (waitKeyEx(15) >= 0 )
+		int ex = waitKeyEx(30);
+		cout<<"ex: "<<ex<<endl;
+   	if (ex>= 0 )
 	   	break;
 	}
 
