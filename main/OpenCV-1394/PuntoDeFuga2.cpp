@@ -22,8 +22,8 @@
 using namespace cv;
 using namespace std;
 
-String image_path;
-String file;
+string image_path;
+string file;
 RNG rng (12345);
 
 
@@ -149,7 +149,7 @@ int main (int argc, char **argv)
    unsigned int i, j;
 
 
-   String dataFiles;
+   string dataFiles;
    ifstream infile;
    Mat image;
 
@@ -182,7 +182,7 @@ int main (int argc, char **argv)
    {
       umbralArea = atof (argv[2]);
       if (umbralArea < 0.)
-      {
+      {-L makefile
          cerr << "El umbral de área minimo tiene que ser mayor que 0"
             << endl;
          exit (1);
