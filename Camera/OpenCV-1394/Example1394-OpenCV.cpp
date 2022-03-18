@@ -66,11 +66,16 @@ int main()
 		cout << "uFrame["<< uF->Index << "].timestamp= " << uF->timestamp << endl;
 #endif
       C0.Release_uFrame_Pointer(idx);
-		imshow( "Camara", frame);
-		int ex = waitKeyEx(30);
+	  	imshow("Camara",frame.clone());
+	    
+		waitKey(10);
+		int ex = waitKeyEx(50);
 		cout<<"ex: "<<ex<<endl;
-   	if (ex>= 0 )
-	   	break;
+		if (ex == 537919601 )
+			break;
+		if (ex == 537919604 )
+			imwrite( "./Sel/"+to_string(cont) + ".jpg", frame);	
+
 	}
 
 	C0.Finish_Capture();

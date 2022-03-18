@@ -15,10 +15,10 @@ using namespace cv;
 numero positivo la camara se aleja del objeto.
 numero negativo la camara se acerca al objeto.
 */
-const string stepping = "150";
+const string stepping = "500";
 
 /*# de imagenes a*/
-int iter = 30;
+int iter = 25;
 
 
 int main(int argc, char **argv)
