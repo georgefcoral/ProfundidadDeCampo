@@ -1,0 +1,28 @@
+# Si MAKE no fue ejecutado desde el TOPDIR, voy a "buscarlo"
+ifndef FROM_TOP
+
+.DEFAULT_GOAL=all
+.PHONY: all dir clean cleandir
+
+CXXFLAGS +=  `wx-config --cxxflags`
+
+all dir:
+	@$(MAKE) -sC .. dir
+
+clean cleandir:
+	@$(MAKE) -sC .. cleandir
+
+tar:
+	@echo "Can't tar from here."
+
+%:
+	@$(MAKE) -sC .. $@
+
+# Si MAKE fue ejecutado desde TOPDIR...
+else
+
+include Makefile-targets
+include $(TOPDIR)/Makefile-rules
+
+endif
+

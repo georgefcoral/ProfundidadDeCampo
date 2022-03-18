@@ -1,0 +1,16 @@
+INCLUDEDIR=$(TOPDIR)/include
+LIBDIRS=$(TOPDIR)/lib
+
+# Objetivos
+BINS=$(patsubst %.cpp,%,$(wildcard *.cpp))
+OBJS=$(addsuffix .o,$(BINS))
+
+# Banderas
+LOCAL_LD_CXXFLAGS=-L $(LIBDIRS)
+LOCAL_LIBS= -lCamera1394 -ldc1394 -lm -lz
+
+# Dependencias
+$(OBJS): %.o: %.cpp $(wildcard $(INCLUDEDIR)/*.h)
+$(BINS): %: %.o
+
+# Otros objetivos

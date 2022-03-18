@@ -1,0 +1,100 @@
+.PHONY: all build_subdirs build_objs build_archives build_bins clean_subdirs clean
+.DEFAULT_GOAL=all
+
+
+# Para el Makefile del TOPDIR
+ifdef IAMTOP
+.PHONY: dir cleandir tar
+
+dir:
+	$(MAKE) -sC $(subst $(TOPDIR)/,,$(PWD))
+	@echo "END"
+
+cleandir:
+	$(MAKE) -sC $(subst $(TOPDIR)/,,$(PWD)) clean
+	@echo "END"
+
+tar: clean
+	@echo -n "PACKING... "
+	@cd ..; \
+	 tar -jcf $(PACKAGE_NAME)-`date +"%d%m%Y%k%M" | sed 's/ /0/g'`.tar.bz2 $(notdir $(TOPDIR))
+	@echo "DONE"
+
+%:
+	@if [ $(PWD) = $(CURDIR) ]; then \
+	 echo "Undefined rule ($@)"; \
+	 else \
+	 $(MAKE) -sC $(subst $(TOPDIR)/,,$(PWD)) $@; \
+	 fi
+
+else
+THISDIR = $(subst $(TOPDIR)/,,$(CURDIR))
+
+%:
+	@echo "Undefined rule ($@)"
+
+endif # Para el TOPDIR
+
+##################
+# Reglas generales
+##################
+.SECONDEXPANSION:
+
+%.o:
+	@echo "CXX     $(THISDIR)/$@"
+	$(CXX) \
+	    $($@_CXXFLAGS) $(LOCAL_CXXFLAGS) $(CXXFLAGS) \
+	    $($@_INCLUDE_FLAGS) $(LOCAL_INCLUDE_CXXFLAGS) $(INCLUDE_CXXFLAGS) \
+	    -I. -I.. -I$(TOPDIR) \
+	    -c -o $@ $<
+
+%.a:
+	@echo "AR      $(THISDIR)/$@"
+	@if [ -e $@ ]; then rm -f $@; fi
+	@rm -fr .tempARs
+	@mkdir .tempARs
+	@cd .tempARs; \
+	for i in $(filter %.a,$+); do \
+		ar x ../$$i; \
+		for j in `ar t ../$$i`; do \
+			`echo $$i | sed "s/\(.*\)\/\(.*\)/mv $$j \1_$$j/"`; \
+		done; \
+	done
+	@if [ -n "$(filter %.a,$+)" ]; then \
+		$(AR) cr $@ $(filter-out %.a,$+) .tempARs/*; \
+	else \
+		$(AR) cr $@ $(filter-out %.a,$+); \
+	fi
+	@rm -fr .tempARs
+	@ranlib $@
+
+build_subdirs: $(SUBDIRS)
+	@for i in $(SUBDIRS); do $(MAKE) -sC $$i || return 1; done
+
+build_objs: $(OBJS)
+build_archives: $(ARCHIVES)
+build_bins: $(BINS)
+
+$(BINS):
+	@echo "LD      $(THISDIR)/$@"
+	$(CXX) \
+		$($@_CXXFLAGS) $(LOCAL_CXXFLAGS) $(CXXFLAGS) \
+		$($@_LD_CXXFLAGS) $(LOCAL_LD_CXXFLAGS) $(LD_CXXFLAGS) \
+		-o $@ $+ \
+		$($@_LIBS) $(LOCAL_LIBS) $(LIBS)
+
+clean: clean_subdirs $(EXTRA_CLEAN_TARGETS)
+	@echo "CLEAN   $(THISDIR)"
+	@rm -f $(OBJS) $(ARCHIVES) $(BINS)
+ifdef IAMTOP
+	@echo "END"
+endif
+
+clean_subdirs: $(SUBDIRS)
+	for i in $(SUBDIRS); do $(MAKE) -sC $$i clean || return 1; done
+
+all: $(IEXTRA_TARGETS) build_subdirs build_objs build_archives build_bins $(EXTRA_TARGETS)
+ifdef IAMTOP
+	@echo "END"
+endif
+
