@@ -214,12 +214,12 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   temporalObjsMem < objDescriptor > tObjs (20, 20, 10, pow(umbralDistance, 2));
+   temporalObjsMem < objDescriptor > tObjs (20, 100, 10, pow(umbralDistance, 2));
 
    infile.open (dataFiles);
 
 
-   //  namedWindow ("Output", 1);
+   namedWindow ("contornos", 1);
    //  if (Umbraliza)
    // namedWindow ("Umbralizada", 1);
 
@@ -250,15 +250,19 @@ int main (int argc, char **argv)
          return -1;
       }
 
-      if (Umbraliza)
-         threshold (fD.Image, fD.Image, 25, 255, THRESH_BINARY_INV);
-      else
-         dilate (fD.Image, fD.Image, element);
-
+      // if (Umbraliza)
+      
+      // else
+      //    dilate (fD.Image, fD.Image, element);
+      threshold (fD.Image, fD.Image, 25, 255, THRESH_BINARY);
       findContours (fD.Image, fD.contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
       filterSmallContours(tmpContours, umbralArea);
       sortContours (tmpContours, fD.contours);
-
+      Mat frameRGB;
+      cvtColor (fD.Image,frameRGB, COLOR_GRAY2RGB);
+      drawContours(frameRGB,fD.contours,-1,Scalar(0,255,0));
+      imshow("contornos",frameRGB);
+      waitKey(0);
       for (i = 0; i < fD.contours.size (); i++)
       {
          Moments mo;
@@ -303,7 +307,7 @@ int main (int argc, char **argv)
 
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
    realPoints<<"RP = [";
-   for (j = 0; j < 18; ++j)//Número de objetos
+   for (j = 0; j < 5; ++j)//Número de objetos
    {
       vector<Mat> pointsToFit;
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
@@ -317,7 +321,7 @@ int main (int argc, char **argv)
             realPoints<<"["<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<","<<"1];";
          }
          //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
-         cout<<pts<<endl;
+         //cout<<pts<<endl;
          pointsToFit.push_back(pts);
       }
       realPoints<<endl;
@@ -325,7 +329,7 @@ int main (int argc, char **argv)
       Mat L = fitLine(pointsToFit, 0.0003).t();
       
       linesToFit.push_back(L);
-      cout << "L[" << j << "] = " << L.t() << endl; 
+      //cout << "L[" << j << "] = " << L.t() << endl; 
    }
    realPoints<<"]";
    Mat puntoDeFuga = fitLine(linesToFit, 0.0003);

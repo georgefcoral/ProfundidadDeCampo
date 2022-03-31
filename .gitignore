@@ -47,3 +47,9 @@ ejecutableFocusingMeasures2
 testMomentsMetricA
 testMomentsMetricB
 testSortContours
+contornos
+contours/
+ej1/
+ej2/
+salida.txt
+.vscode/settings.json
