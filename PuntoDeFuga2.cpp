@@ -131,6 +131,8 @@ struct objDescriptor:public trackedObj
    }
 };
 
+void  getTracking(temporalObjsMem < objDescriptor > &tObjs,int umbralFrame,int numObj);
+
 int main (int argc, char **argv)
 {
    //Files to write DATA
@@ -140,11 +142,11 @@ int main (int argc, char **argv)
    Mat pointMat;
    int t;
    int dilation_type = 2;
-   int dilation_size = 2;
-   bool Umbraliza = true;
+   int dilation_size = 1;
+
    double umbralDistance = 30.;
    double umbralHu = 500.;
-   double umbralArea = 50;
+   double umbralArea = 50.;
    vector < frameData > Frames;
    unsigned int i, j;
 
@@ -214,7 +216,7 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   temporalObjsMem < objDescriptor > tObjs (20, 100, 10, pow(umbralDistance, 2));
+   temporalObjsMem < objDescriptor > tObjs (20, umbralFrame, 10, pow(umbralDistance, 2));
 
    infile.open (dataFiles);
 
@@ -227,8 +229,8 @@ int main (int argc, char **argv)
    Mat element = getStructuringElement (dilation_type,
                                         Size (2 * dilation_size + 1,
                                               2 * dilation_size + 1),
-                                        Point (dilation_size,
-                                               dilation_size));
+                                        Point (2,
+                                               2));
 
    t = 0;
    while (getline (infile, file))
@@ -253,8 +255,9 @@ int main (int argc, char **argv)
       // if (Umbraliza)
       
       // else
-      //    dilate (fD.Image, fD.Image, element);
-      threshold (fD.Image, fD.Image, 25, 255, THRESH_BINARY);
+      //    
+     // erode (fD.Image, fD.Image, element);
+      threshold (fD.Image, fD.Image, 55, 255, THRESH_BINARY);
       findContours (fD.Image, fD.contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
       filterSmallContours(tmpContours, umbralArea);
       sortContours (tmpContours, fD.contours);
@@ -262,7 +265,7 @@ int main (int argc, char **argv)
       cvtColor (fD.Image,frameRGB, COLOR_GRAY2RGB);
       drawContours(frameRGB,fD.contours,-1,Scalar(0,255,0));
       imshow("contornos",frameRGB);
-      waitKey(0);
+      waitKey(10);
       for (i = 0; i < fD.contours.size (); i++)
       {
          Moments mo;
@@ -304,15 +307,17 @@ int main (int argc, char **argv)
    //Codigo Ajuste de puntos a una linea.
    vector<Mat> linesToFit;
 
+   getTracking(tObjs,umbralFrame,5);
 
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
    realPoints<<"RP = [";
-   for (j = 0; j < 5; ++j)//Número de objetos
+   for (j = 0; j < 10; ++j)//Número de objetos
    {
       vector<Mat> pointsToFit;
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
       for (i = 0; i < unsigned(umbralFrame); ++i)//Numero de frames
       {
+
          //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
          Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[i][j].mc.x,tObjs.Table[i][j].mc.y,1);
          if(i<(unsigned(umbralFrame)-1)){
@@ -338,7 +343,8 @@ int main (int argc, char **argv)
    ptx = puntoDeFuga.at<double>(0,0)/puntoDeFuga.at<double>(0,2);
    pty = puntoDeFuga.at<double>(0,1)/puntoDeFuga.at<double>(0,2);
    cout<<"Punto de Fuga en cordenadas de la imagen: ("<<ptx<<","<<pty<<")"<<endl;
-   Point2f pf = Point2f(ptx,pty);
+
+   //Point2f pf = Point2f(ptx,pty);
    Mat outImage;
    cvtColor (Frames[0].Image,outImage, COLOR_GRAY2RGB);
    namedWindow ("pf", 1);
@@ -352,3 +358,80 @@ int main (int argc, char **argv)
    return 0;
 }
 
+
+
+void  getTracking(temporalObjsMem < objDescriptor > &tObjs,int umbralFrame,int numObj){
+   int idx = 0;
+   int k=0;
+   int l= 0;
+   int n = 0;
+   vector<vector<Point2f>> cola(1000);
+   int flag[umbralFrame][numObj];
+   
+   for (int i = 0; i < numObj; ++i)//Número de objetos
+   {
+      for(int j = 0; j<umbralFrame; ++j)
+      {
+            if(tObjs.Table[i][j].status==DEFINED && flag[i][j]!= -1){
+               k=i;
+               l=j;
+               while(tObjs.Table[k][l].status==DEFINED && k< umbralFrame){
+                  cola[n].push_back(Point2f(k,l));
+                  l = tObjs.Table[k][l].next;
+                  flag[k][l]=-1;
+                  k++;
+               }
+            }
+            n++;
+      }
+      
+   }
+   for(unsigned int i = 0; i<cola[8].size();i++){
+      cout<<cola[8][i]<<endl;
+   }
+
+}
+
+
+
+
+
+
+
+
+
+//  int t = 0;
+//    vector<int> registro;
+//    vector<Point2f> objeto;
+//    unsigned int i, j=0;
+//    vector < vector<Point2f> > tracking;
+//    //int checker[tObjs.maxElements][tObjs.maxSeq];
+//    Mat checker = Mat::ones(tObjs.maxSeq,tObjs.maxElements,CV_8U);
+//    //Table[i][j].status
+//    for (i=0;i<tObjs.maxElements;++i)
+//    {
+//       cout<<"iteracion i "<<i<<endl;
+//          if(checker.at<uchar>(i,j)!=0)
+//          {  
+//             while(j<tObjs.maxSeq)
+//             {
+//                if(tObjs.Table[j][i].status!=MISSING)
+//                {
+//                   objeto.push_back(Point2f(tObjs.Table[j][i].mc.x,tObjs.Table[j][i].mc.y));
+//                }else{
+//                   //cout<<objeto<<endl;
+//                   registro.push_back(t);
+//                   tracking.push_back(objeto);
+//                   objeto.clear();
+//                   t = j;
+//                }
+//                checker.at<uchar>(i,j) = 0;
+//                j++;
+//             }
+//             j=0;
+//          }else{
+//             continue;
+//       }
+      
+//    }
+//    return tracking;
