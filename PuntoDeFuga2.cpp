@@ -35,30 +35,30 @@ RNG rng (12345);
 struct objDescriptor:public trackedObj
 {
    /*!
-   \var int idxFrame;
-   \brief Contiene el identificador de cada cuadro
-   */
+      \var int idxFrame;
+      \brief Contiene el identificador de cada cuadro
+    */
    int idxFrame;
-    /*!
-   \var int idxObj;
-   \brief Contiene el identificador de cada objeto en cada cuadro.
-   */
+   /*!
+      \var int idxObj;
+      \brief Contiene el identificador de cada objeto en cada cuadro.
+    */
    int idxObj;
-    /*!
-   \var momHu momentsHu;
-   \brief Variable de tipo momHu que contiene a los 7 valores que representan a los momentos de Hu..
-   */
+   /*!
+      \var momHu momentsHu;
+      \brief Variable de tipo momHu que contiene a los 7 valores que representan a los momentos de Hu..
+    */
    momHu momentsHu;
    /*!
-   \var Point2f mc;
-   \brief Contiene al centro de masa de cada objeto en coordenadas de la imagen.
-   */
+      \var Point2f mc;
+      \brief Contiene al centro de masa de cada objeto en coordenadas de la imagen.
+    */
    Point2f mc;
 
    /*!
-   \fn objDescriptor()
-   \brief Constructor que inicializa a idxFrame e idxObj.
-   */
+      \fn objDescriptor()
+      \brief Constructor que inicializa a idxFrame e idxObj.
+    */
      objDescriptor ()
    {
       idxFrame = idxObj = -1;
@@ -69,8 +69,8 @@ struct objDescriptor:public trackedObj
       \param frameData &F
       \param int iF
       \param int io
-      
-   */
+
+    */
    objDescriptor (const frameData & F, int iF, int io)
    {
       idxFrame = iF;
@@ -83,7 +83,7 @@ struct objDescriptor:public trackedObj
       \fn objDescriptor (const objDescriptor & O)
       \brief Constructor de copia. Crea un objeto a partir de otro objeto de esta misma clase. 
       \param objDescriptor &O
-   */
+    */
    objDescriptor (const objDescriptor & O)
    {
       idxFrame = O.idxFrame;
@@ -95,7 +95,7 @@ struct objDescriptor:public trackedObj
       \fn void operator = (const objDescriptor & O)
       \brief Sobre carga del operador igual (=).
       \param objDescriptor &O
-   */
+    */
    void operator = (const objDescriptor & O)
    {
       idxFrame = O.idxFrame;
@@ -103,12 +103,12 @@ struct objDescriptor:public trackedObj
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
-    /*!
+   /*!
       \fn double Distance (const trackedObj & o)
       \brief Función que incluye la distancia entre dos objetos con respecto a sus centros de masa.
       \param trackedObj & o
       \return distance
-    */   
+    */
    double Distance (const trackedObj & o)
    {
       objDescriptor *p = (objDescriptor *) & o;
@@ -118,26 +118,27 @@ struct objDescriptor:public trackedObj
    /*!
       \fn repr ()
       \brief Función que imprime variables para su depuración.
-    */  
+    */
    string repr ()
    {
       stringstream ss;
       string s;
 
-      ss << "Obj[" << idxFrame << "][" << idxObj << "]= [" << mc.
-         x << ", " << mc.y << "]";
+      ss << "Obj[" << idxFrame << "][" << idxObj << "]= [" << mc.x << ", " <<
+         mc.y << "]";
       s = ss.str ();
       return s;
    }
 };
 
-void  getTracking(temporalObjsMem < objDescriptor > &tObjs,int umbralFrame,int numObj);
+void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
+                  int numObj);
 
 int main (int argc, char **argv)
 {
    //Files to write DATA
    String nameFile = "realPoints.m";
-   ofstream realPoints(nameFile);
+   ofstream realPoints (nameFile);
    //vector <vector < Point2i >> mcGlobal(100);
    Mat pointMat;
    int t;
@@ -172,13 +173,12 @@ int main (int argc, char **argv)
       cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] <<
          "ListaArchivos" << "UmbralFrame" << endl << endl <<
          "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
-         <<"\tUmbralFrame -> cantidad de cuadros a validar." 
-         <<endl;
+         << "\tUmbralFrame -> cantidad de cuadros a validar." << endl;
    }
 
    dataFiles = String (argv[1]);
 
-   int umbralFrame = atoi(argv[2]);
+   int umbralFrame = atoi (argv[2]);
 /*
    if (argc > 2)
    {
@@ -216,7 +216,8 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   temporalObjsMem < objDescriptor > tObjs (20, umbralFrame, 10, pow(umbralDistance, 2));
+   temporalObjsMem < objDescriptor > tObjs (20, umbralFrame, 10,
+                                            pow (umbralDistance, 2));
 
    infile.open (dataFiles);
 
@@ -235,7 +236,7 @@ int main (int argc, char **argv)
    t = 0;
    while (getline (infile, file))
    {
-      vector < vector < Point > > tmpContours;
+      vector < vector < Point > >tmpContours;
       frameData fD, fDo;
       vector < double >labels;
       istringstream iss (file);
@@ -253,19 +254,19 @@ int main (int argc, char **argv)
       }
 
       // if (Umbraliza)
-      
+
       // else
       //    
-     // erode (fD.Image, fD.Image, element);
+      // erode (fD.Image, fD.Image, element);
       threshold (fD.Image, fD.Image, 55, 255, THRESH_BINARY);
       findContours (fD.Image, fD.contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
-      filterSmallContours(tmpContours, umbralArea);
+      filterSmallContours (tmpContours, umbralArea);
       sortContours (tmpContours, fD.contours);
       Mat frameRGB;
-      cvtColor (fD.Image,frameRGB, COLOR_GRAY2RGB);
-      drawContours(frameRGB,fD.contours,-1,Scalar(0,255,0));
-      imshow("contornos",frameRGB);
-      waitKey(10);
+      cvtColor (fD.Image, frameRGB, COLOR_GRAY2RGB);
+      drawContours (frameRGB, fD.contours, -1, Scalar (0, 255, 0));
+      imshow ("contornos", frameRGB);
+      waitKey (10);
       for (i = 0; i < fD.contours.size (); i++)
       {
          Moments mo;
@@ -297,97 +298,127 @@ int main (int argc, char **argv)
          objs.push_back (ob);
       }
       tObjs.addDescriptors (objs, t);
-      tObjs.printGrid();
+      tObjs.printGrid ();
       tObjs.incIdx ();
       t++;
    }
 
-   cout<<" tObjs.maxSeq: "<<tObjs.maxSeq<<endl;
-   cout<<" tObjs.maxElements "<<tObjs.maxElements<<endl;
+   cout << " tObjs.maxSeq: " << tObjs.maxSeq << endl;
+   cout << " tObjs.maxElements " << tObjs.maxElements << endl;
    //Codigo Ajuste de puntos a una linea.
-   vector<Mat> linesToFit;
+   vector < Mat > linesToFit;
 
-   getTracking(tObjs,umbralFrame,5);
+   getTracking (tObjs, umbralFrame, 5);
 
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
-   realPoints<<"RP = [";
-   for (j = 0; j < 10; ++j)//Número de objetos
+   realPoints << "RP = [";
+   for (j = 0; j < 10; ++j)     //Número de objetos
    {
-      vector<Mat> pointsToFit;
+      vector < Mat > pointsToFit;
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
-      for (i = 0; i < unsigned(umbralFrame); ++i)//Numero de frames
+      for (i = 0; i < unsigned (umbralFrame); ++i) //Numero de frames
       {
 
          //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
-         Mat pts = (Mat_ <double> (3,1)<< tObjs.Table[i][j].mc.x,tObjs.Table[i][j].mc.y,1);
-         if(i<(unsigned(umbralFrame)-1)){
-            realPoints<<"["<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<","<<"1],";
-         }else{
-            realPoints<<"["<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<","<<"1];";
+         Mat pts = (Mat_ < double >(3, 1) << tObjs.Table[i][j].mc.x,
+                    tObjs.Table[i][j].mc.y, 1);
+         if (i < (unsigned (umbralFrame) - 1))
+         {
+            realPoints << "[" << tObjs.Table[i][j].mc.
+               x << "," << tObjs.Table[i][j].mc.y << "," << "1],";
+         }
+         else
+         {
+            realPoints << "[" << tObjs.Table[i][j].mc.
+               x << "," << tObjs.Table[i][j].mc.y << "," << "1];";
          }
          //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
          //cout<<pts<<endl;
-         pointsToFit.push_back(pts);
+         pointsToFit.push_back (pts);
       }
-      realPoints<<endl;
+      realPoints << endl;
 
-      Mat L = fitLine(pointsToFit, 0.0003).t();
-      
-      linesToFit.push_back(L);
+      Mat L = fitLine (pointsToFit, 0.0003).t ();
+
+      linesToFit.push_back (L);
       //cout << "L[" << j << "] = " << L.t() << endl; 
    }
-   realPoints<<"]";
-   Mat puntoDeFuga = fitLine(linesToFit, 0.0003);
-   cout << "Punto de Fuga = " << puntoDeFuga<< endl;
-   int ptx,pty;
-   ptx = puntoDeFuga.at<double>(0,0)/puntoDeFuga.at<double>(0,2);
-   pty = puntoDeFuga.at<double>(0,1)/puntoDeFuga.at<double>(0,2);
-   cout<<"Punto de Fuga en cordenadas de la imagen: ("<<ptx<<","<<pty<<")"<<endl;
+   realPoints << "]";
+   Mat puntoDeFuga = fitLine (linesToFit, 0.0003);
+   cout << "Punto de Fuga = " << puntoDeFuga << endl;
+   int ptx, pty;
+   ptx = puntoDeFuga.at < double >(0, 0) / puntoDeFuga.at < double >(0, 2);
+   pty = puntoDeFuga.at < double >(0, 1) / puntoDeFuga.at < double >(0, 2);
+   cout << "Punto de Fuga en cordenadas de la imagen: (" << ptx << "," << pty
+      << ")" << endl;
 
    //Point2f pf = Point2f(ptx,pty);
    Mat outImage;
-   cvtColor (Frames[0].Image,outImage, COLOR_GRAY2RGB);
+   cvtColor (Frames[0].Image, outImage, COLOR_GRAY2RGB);
    namedWindow ("pf", 1);
-   circle(outImage,Point(ptx,pty),5,Scalar(0,0,255),FILLED,LINE_8);
-   imshow("pf",outImage);
-   waitKey(0);
+   circle (outImage, Point (ptx, pty), 5, Scalar (0, 0, 255), FILLED, LINE_8);
+   imshow ("pf", outImage);
+   waitKey (0);
    destroyWindow ("pf");
    infile.close ();
    fileOut.close ();
-   realPoints.close();
+   realPoints.close ();
    return 0;
 }
 
 
 
-void  getTracking(temporalObjsMem < objDescriptor > &tObjs,int umbralFrame,int numObj){
-   int idx = 0;
-   int k=0;
-   int l= 0;
+void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
+                  int numObj)
+{
+   int k = 0;
+   int l = 0;
    int n = 0;
-   vector<vector<Point2f>> cola(1000);
+   vector < vector < Point2f >> cola (1000);
    int flag[umbralFrame][numObj];
-   
-   for (int i = 0; i < numObj; ++i)//Número de objetos
+
+   //Inicializamos el arreglo flag
+   for (int i = 0; i < umbralFrame; ++i)
+      memset (flag[i], 0, numObj * sizeof(int));
+
+   for (int i = 0; i < numObj; ++i) //Número de objetos
    {
-      for(int j = 0; j<umbralFrame; ++j)
+      for (int j = 0; j < umbralFrame; ++j)
       {
-            if(tObjs.Table[i][j].status==DEFINED && flag[i][j]!= -1){
-               k=i;
-               l=j;
-               while(tObjs.Table[k][l].status==DEFINED && k< umbralFrame){
-                  cola[n].push_back(Point2f(k,l));
-                  l = tObjs.Table[k][l].next;
-                  flag[k][l]=-1;
-                  k++;
-               }
+         if (tObjs.Table[j][i].status == DEFINED && flag[j][i] != -1)
+         {
+            k = i;
+            l = j;
+            while (k >=0 && tObjs.Table[l][k].status == DEFINED && l < umbralFrame)
+            {
+               //Metemos el elemento definido en el vector n de la cola.
+               cola[n].push_back (Point2f (l, k));
+               //Marcamos que el elemento k,l ya fue asociado.
+               flag[k][l] = -1;
+
+               //Encontramos en el renglon siguiente el correspondiente.
+               k = tObjs.Table[l][k].next;
+               l++;
             }
-            n++;
+         }
+         n++;
       }
-      
    }
-   for(unsigned int i = 0; i<cola[8].size();i++){
-      cout<<cola[8][i]<<endl;
+
+   for (unsigned int i = 0; i < cola.size(); ++i)
+   {
+      cout << "Analizando objeto en la columna " << i << endl;
+      for (unsigned int j = 0; j < cola[i].size (); j++)
+      {
+         int r, c;
+
+         // i es el indice de la columna de la tabla.
+         // j es el indice del renglon de la tabla
+         r = cola[i][j].x;
+         c = cola[i][j].y;
+         cout << tObjs.Table[r][c].mc << endl;
+      }
+      cout << endl;
    }
 
 }
@@ -432,6 +463,6 @@ void  getTracking(temporalObjsMem < objDescriptor > &tObjs,int umbralFrame,int n
 //          }else{
 //             continue;
 //       }
-      
+
 //    }
 //    return tracking;
