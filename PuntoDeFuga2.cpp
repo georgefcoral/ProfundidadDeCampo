@@ -371,9 +371,11 @@ int main (int argc, char **argv)
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                   int numObj)
 {
+   ofstream tracking ("tracking.m");
    int k = 0;
    int l = 0;
    int n = 0;
+   int begin = 0;
    vector < vector < Point2f >> cola (1000);
    int flag[umbralFrame][numObj];
 
@@ -407,20 +409,30 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
 
    for (unsigned int i = 0; i < cola.size(); ++i)
    {
-      cout << "Analizando objeto en la columna " << i << endl;
+      if(cola[i].size () == 0)
+         continue;
+      //cout << "Analizando objeto en la columna " << i << endl;
+      
+      tracking<<"Obj"+to_string(i)+"=[";
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
+
          int r, c;
 
          // i es el indice de la columna de la tabla.
          // j es el indice del renglon de la tabla
          r = cola[i][j].x;
          c = cola[i][j].y;
-         cout << tObjs.Table[r][c].mc << endl;
+         if(j==0){
+            begin = tObjs.Table[r][c].idxFrame;
+         }
+         //cout << tObjs.Table[r][c].idxFrame << endl;
+         tracking<<tObjs.Table[r][c].mc.x<<","<<tObjs.Table[r][c].mc.y<<","<<tObjs.Table[r][c].idxFrame<<";"<<endl;
       }
-      cout << endl;
+      tracking<<"];"<<endl;
+      
    }
-
+   tracking.close();
 }
 
 
