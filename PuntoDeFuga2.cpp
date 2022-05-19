@@ -56,6 +56,21 @@ struct objDescriptor:public trackedObj
    Point2f mc;
 
    /*!
+      \var float area;
+      \brief Contiene el area de cada objeto en cada cuadro.
+    */
+
+   float area;
+
+   /*!
+      \var float perimetro;
+      \brief Contiene el perimetro de cada objeto en cada cuadro.
+    */
+
+   float perimetro;
+
+
+   /*!
       \fn objDescriptor()
       \brief Constructor que inicializa a idxFrame e idxObj.
     */
@@ -77,6 +92,8 @@ struct objDescriptor:public trackedObj
       idxObj = io;
       momentsHu = F.momentsHu[idxObj];
       mc = F.mc[idxObj];
+      area = F.areas[idxObj];
+      perimetro = F.perimetros[idxObj];
    }
 
    /*!
@@ -90,6 +107,8 @@ struct objDescriptor:public trackedObj
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
+      area = O.area;
+      perimetro = O.perimetro;
    }
    /*!
       \fn void operator = (const objDescriptor & O)
@@ -102,6 +121,8 @@ struct objDescriptor:public trackedObj
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
+      area = O.area;
+      perimetro = O.perimetro;
    }
    /*!
       \fn double Distance (const trackedObj & o)
@@ -257,8 +278,9 @@ int main (int argc, char **argv)
 
       // else
       //    
-      // erode (fD.Image, fD.Image, element);
+      // 
       threshold (fD.Image, fD.Image, 55, 255, THRESH_BINARY);
+      dilate(fD.Image, fD.Image, element);
       findContours (fD.Image, fD.contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
       filterSmallContours (tmpContours, umbralArea);
       sortContours (tmpContours, fD.contours);
@@ -266,7 +288,7 @@ int main (int argc, char **argv)
       cvtColor (fD.Image, frameRGB, COLOR_GRAY2RGB);
       drawContours (frameRGB, fD.contours, -1, Scalar (0, 255, 0));
       imshow ("contornos", frameRGB);
-      waitKey (10);
+     // waitKey (10);
       for (i = 0; i < fD.contours.size (); i++)
       {
          Moments mo;
@@ -282,16 +304,19 @@ int main (int argc, char **argv)
          cM = Point2f (static_cast < double >(mo.m10 / (mo.m00 + 1e-5)),
                        static_cast < double >(mo.m01 / (mo.m00 + 1e-5)));
          fD.mc.push_back (cM);
-
+         circle(frameRGB,Point((int)rint(cM.x),(int)rint(cM.y)),3,Scalar(0,0,255),5);
          HuMoments (mo, mH.mH);
          for (j = 0; j < 7; ++j)
             mH.mH[j] =
                -1 * copysign (1.0, mH.mH[j]) * log10 (abs (mH.mH[j]) + 1e-8);
          fD.momentsHu.push_back (mH);
          fD.areas.push_back (mo.m00);
+         fD.perimetros.push_back(arcLength(fD.contours[i],true));
+         
       }
       Frames.push_back (fD);
-
+      imshow ("contornos", frameRGB);
+      waitKey (100);
       for (i = 0; i < Frames[t].contours.size (); ++i)
       {
          objDescriptor ob (Frames[t], t, i);
@@ -396,7 +421,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                //Metemos el elemento definido en el vector n de la cola.
                cola[n].push_back (Point2f (l, k));
                //Marcamos que el elemento k,l ya fue asociado.
-               flag[k][l] = -1;
+               flag[l][k] = -1;
 
                //Encontramos en el renglon siguiente el correspondiente.
                k = tObjs.Table[l][k].next;
@@ -409,7 +434,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
 
    for (unsigned int i = 0; i < cola.size(); ++i)
    {
-      if(cola[i].size () == 0)
+      if(cola[i].size () < 4)
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
       
@@ -427,7 +452,14 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
             begin = tObjs.Table[r][c].idxFrame;
          }
          //cout << tObjs.Table[r][c].idxFrame << endl;
-         tracking<<tObjs.Table[r][c].mc.x<<","<<tObjs.Table[r][c].mc.y<<","<<tObjs.Table[r][c].idxFrame<<";"<<endl;
+         double humNorm = 0;
+         for(int i = 0; i<7 ; i++){
+            humNorm += tObjs.Table[r][c].momentsHu.mH[i]*tObjs.Table[r][c].momentsHu.mH[i];
+         }
+         tracking<<tObjs.Table[r][c].mc.x<<","<<tObjs.
+         Table[r][c].mc.y<<","<<tObjs.Table[r][c].idxFrame
+         <<","<<tObjs.Table[r][c].area<<","<<tObjs.Table[r][c].perimetro<<","
+         <<sqrt(humNorm)<<";"<<endl;
       }
       tracking<<"];"<<endl;
       
