@@ -396,6 +396,7 @@ int main (int argc, char **argv)
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                   int numObj)
 {
+   int cont = 0;
    ofstream tracking ("tracking.m");
    int k = 0;
    int l = 0;
@@ -438,7 +439,8 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
       
-      tracking<<"Obj"+to_string(i)+"=[";
+      tracking<<"Obj"+to_string(cont)+"=[";
+      cont++;
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
 
