@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <fstream>
+#include <algorithm>
 #include <vector>
 #include "opencv2/opencv.hpp"
 #include "opencv2/imgproc.hpp"
@@ -44,11 +45,19 @@ struct objDescriptor:public trackedObj
       \brief Contiene el identificador de cada objeto en cada cuadro.
     */
    int idxObj;
+
+   /*!
+      \var vector < Point > objContour;
+      \brief El contorno del objeto almacenado.
+   */
+   vector < Point > objContour;
+
    /*!
       \var momHu momentsHu;
       \brief Variable de tipo momHu que contiene a los 7 valores que representan a los momentos de Hu..
     */
    momHu momentsHu;
+
    /*!
       \var Point2f mc;
       \brief Contiene al centro de masa de cada objeto en coordenadas de la imagen.
@@ -58,11 +67,12 @@ struct objDescriptor:public trackedObj
    /*!
       \fn objDescriptor()
       \brief Constructor que inicializa a idxFrame e idxObj.
-    */
-     objDescriptor ()
+   */
+   objDescriptor ()
    {
       idxFrame = idxObj = -1;
    }
+
    /*!
       \fn objDescriptor (const frameData & F, int iF, int io)
       \brief Constructor de inicialización, asigna valores a idxFrame, idObj, momentsHu y mc.
@@ -73,6 +83,7 @@ struct objDescriptor:public trackedObj
     */
    objDescriptor (const frameData & F, int iF, int io)
    {
+      objContour = F.contours[io];
       idxFrame = iF;
       idxObj = io;
       momentsHu = F.momentsHu[idxObj];
@@ -83,42 +94,48 @@ struct objDescriptor:public trackedObj
       \fn objDescriptor (const objDescriptor & O)
       \brief Constructor de copia. Crea un objeto a partir de otro objeto de esta misma clase. 
       \param objDescriptor &O
-    */
+   */
    objDescriptor (const objDescriptor & O)
    {
+      objContour = O.objContour;
       idxFrame = O.idxFrame;
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
+
    /*!
       \fn void operator = (const objDescriptor & O)
       \brief Sobre carga del operador igual (=).
       \param objDescriptor &O
-    */
+   */
    void operator = (const objDescriptor & O)
    {
+      objContour.clear();
+      objContour = O.objContour;
       idxFrame = O.idxFrame;
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
    }
+   
    /*!
       \fn double Distance (const trackedObj & o)
       \brief Función que incluye la distancia entre dos objetos con respecto a sus centros de masa.
       \param trackedObj & o
       \return distance
-    */
+   */
    double Distance (const trackedObj & o)
    {
       objDescriptor *p = (objDescriptor *) & o;
 
       return pow (p->mc.x - mc.x, 2.) + pow (p->mc.y - mc.y, 2.);
    }
+   
    /*!
       \fn repr ()
       \brief Función que imprime variables para su depuración.
-    */
+   */
    string repr ()
    {
       stringstream ss;
@@ -216,7 +233,7 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   temporalObjsMem < objDescriptor > tObjs (20, umbralFrame, 10,
+   temporalObjsMem < objDescriptor > tObjs (200, umbralFrame, 10,
                                             pow (umbralDistance, 2));
 
    infile.open (dataFiles);
@@ -258,15 +275,16 @@ int main (int argc, char **argv)
       // else
       //    
       // erode (fD.Image, fD.Image, element);
-      threshold (fD.Image, fD.Image, 55, 255, THRESH_BINARY);
-      findContours (fD.Image, fD.contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
+      //threshold (fD.Image, fD.Image, 55, 255, THRESH_BINARY); // Original de Jorge Coral.
+      adaptiveThreshold(fD.Image, fD.Image, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV, 5, 2);
+
+      tmpContours.clear();
+      findContours (fD.Image, tmpContours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
       filterSmallContours (tmpContours, umbralArea);
       sortContours (tmpContours, fD.contours);
       Mat frameRGB;
       cvtColor (fD.Image, frameRGB, COLOR_GRAY2RGB);
       drawContours (frameRGB, fD.contours, -1, Scalar (0, 255, 0));
-      imshow ("contornos", frameRGB);
-      waitKey (10);
       for (i = 0; i < fD.contours.size (); i++)
       {
          Moments mo;
@@ -282,6 +300,7 @@ int main (int argc, char **argv)
          cM = Point2f (static_cast < double >(mo.m10 / (mo.m00 + 1e-5)),
                        static_cast < double >(mo.m01 / (mo.m00 + 1e-5)));
          fD.mc.push_back (cM);
+         circle(frameRGB, Point((int)rint(cM.x), (int)rint(cM.y)), 5, Scalar(255,196,128),3);
 
          HuMoments (mo, mH.mH);
          for (j = 0; j < 7; ++j)
@@ -291,6 +310,13 @@ int main (int argc, char **argv)
          fD.areas.push_back (mo.m00);
       }
       Frames.push_back (fD);
+      imshow ("contornos", frameRGB);
+      waitKey (0);
+      
+      cout << "Frames[t].contours.size() = "
+           << Frames[t].contours.size() << endl; 
+      cout << "fD.contours.size() = "
+           << fD.contours.size() << endl<< endl; 
 
       for (i = 0; i < Frames[t].contours.size (); ++i)
       {
@@ -298,7 +324,7 @@ int main (int argc, char **argv)
          objs.push_back (ob);
       }
       tObjs.addDescriptors (objs, t);
-      tObjs.printGrid ();
+  //    tObjs.printGrid ();
       tObjs.incIdx ();
       t++;
    }
@@ -366,17 +392,50 @@ int main (int argc, char **argv)
    return 0;
 }
 
+float matchContours(objDescriptor &a, objDescriptor &b)
+{
+   vector< Point >::iterator iteA, endA, iteB, endB;
+   double dist, d, min;
+   
+   iteA = a.objContour.begin();
+   endA = a.objContour.end();
+   iteB = b.objContour.begin();
+   endB = b.objContour.end();
+
+   dist = 0;
+   for (;iteA != endA;++iteA)
+   {
+      
+      iteB = b.objContour.begin();
+      min = d = sqrt(pow(iteA->x - iteB->x, 2) + pow(iteA->y - iteB->y, 2));
+      for (iteB++;iteB != endB;++iteB)
+      {
+         d = sqrt(pow(iteA->x - iteB->x, 2) + pow(iteA->y - iteB->y, 2));
+         if (d < min)
+            min = d;
+      }
+      dist += min;
+   }
+   dist /= a.objContour.size();
+   cout << "idxFrameA, idxFrameB, a.size(), b.size(), dist, distCM = {" 
+        << a.idxFrame << ", " << b.idxFrame << ", "
+        << a.objContour.size()  << ", " << b.objContour.size()  << ", "
+        << dist << ", " << sqrt(pow(a.mc.x-b.mc.x,2)+pow(a.mc.y-b.mc.y,2))
+        << "}" << endl;
+   return dist;
+}
 
 
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                   int numObj)
 {
    ofstream tracking ("tracking.m");
-   int k = 0;
-   int l = 0;
+   int k = 0, k_old;
+   int l = 0, l_old;
    int n = 0;
-   int begin = 0;
-   vector < vector < Point2f >> cola (1000);
+   vector < vector < Point2f > > cola (1000);
+   vector < vector < double > > match (1000);
+   
    int flag[umbralFrame][numObj];
 
    //Inicializamos el arreglo flag
@@ -389,16 +448,23 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
       {
          if (tObjs.Table[j][i].status == DEFINED && flag[j][i] != -1)
          {
-            k = i;
-            l = j;
+            k_old = i;
+            l_old = j;
+            k = tObjs.Table[j][i].next;
+            l = j + 1;
             while (k >=0 && tObjs.Table[l][k].status == DEFINED && l < umbralFrame)
             {
+               //Calculamos el Rank Match
+               match[n].push_back(matchContours(tObjs.Table[l_old][k_old], tObjs.Table[l][k]));
                //Metemos el elemento definido en el vector n de la cola.
                cola[n].push_back (Point2f (l, k));
                //Marcamos que el elemento k,l ya fue asociado.
-               flag[k][l] = -1;
+               flag[l][k] = -1;
+
 
                //Encontramos en el renglon siguiente el correspondiente.
+               l_old = l;
+               k_old = k;
                k = tObjs.Table[l][k].next;
                l++;
             }
@@ -407,13 +473,14 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
       }
    }
 
+   unsigned int idx = 0;
    for (unsigned int i = 0; i < cola.size(); ++i)
    {
-      if(cola[i].size () == 0)
+      if(cola[i].size () < 4)
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
       
-      tracking<<"Obj"+to_string(i)+"=[";
+      tracking<<"Obj"+to_string(idx++)+"=[";
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
 
@@ -423,13 +490,15 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          // j es el indice del renglon de la tabla
          r = cola[i][j].x;
          c = cola[i][j].y;
-         if(j==0){
-            begin = tObjs.Table[r][c].idxFrame;
-         }
          //cout << tObjs.Table[r][c].idxFrame << endl;
-         tracking<<tObjs.Table[r][c].mc.x<<","<<tObjs.Table[r][c].mc.y<<","<<tObjs.Table[r][c].idxFrame<<";"<<endl;
+         tracking << tObjs.Table[r][c].mc.x << ","
+                  << tObjs.Table[r][c].mc.y << ","
+                  << tObjs.Table[r][c].idxFrame << ","
+                  << match[i][j] << ","
+                  << tObjs.Table[r][c].objContour.size() << "; "
+                  << endl;
       }
-      tracking<<"];"<<endl;
+      tracking << "];" << endl;
       
    }
    tracking.close();

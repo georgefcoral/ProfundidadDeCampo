@@ -127,7 +127,6 @@ void sortContours (vector < vector < Point > >&contoursIn,
       vector < cv::Point > P;
 
       idx = C[i].idx;
-      cout.flush();
       contoursOut.push_back (contoursIn[idx]);
    }
 
