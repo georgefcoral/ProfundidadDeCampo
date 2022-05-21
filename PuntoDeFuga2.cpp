@@ -1,5 +1,6 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
+#include <Mosaic.h>
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -150,6 +151,122 @@ struct objDescriptor:public trackedObj
 
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                   int numObj);
+
+void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData > Frames)
+{
+   int idxFrame = 0, k, idxObj=0, val, N, width, height;
+   unsigned int i, j;
+
+   N = Frames.size();
+   width  = Frames[0].Image.cols;
+   height = Frames[0].Image.rows;
+
+   Mosaic M(Size(width, height), 1, 2, 8, 8, CV_8UC3);
+
+   
+   vector <int> oIndexes;
+   oIndexes.assign(N, -1);
+
+
+   namedWindow ("Secuencia", 1);
+
+   //Buscamos el primer objeto definido de la primera imagen
+   for (j = 0; j< tObjs.maxSeq;++j)
+   {
+      for (i = 0; i < tObjs.maxElements && tObjs.Table[j][i].status != DEFINED;++i);
+      if (i == tObjs.maxElements)
+         idxObj = -1; // No h ay elemento definido en ese frame.
+      else
+      {
+         idxObj = i;
+         break;
+      }
+   }
+   idxFrame = j;
+   while(true)
+   {
+      Mat Img0, Img1;
+      
+      cvtColor (Frames[idxFrame].Image, Img0, COLOR_GRAY2RGB);
+      cvtColor (Frames[idxFrame+1].Image, Img1, COLOR_GRAY2RGB);
+
+      if (idxObj != -1)
+      {
+        if (tObjs.Table[idxFrame][idxObj].status == DEFINED)
+         {
+            Point P0((int)rint(tObjs.Table[idxFrame][idxObj].mc.x),(int)rint(tObjs.Table[idxFrame][idxObj].mc.y)); 
+            
+            circle(Img0, P0, 5, Scalar(255,196,128), 3);
+            if (idxFrame < N-2)
+            {
+               k = tObjs.Table[idxFrame][idxObj].next;
+               if (k >= 0)
+               {
+                  Point P1((int)rint(tObjs.Table[idxFrame+1][k].mc.x),(int)rint(tObjs.Table[idxFrame+1][k].mc.y)); 
+                  circle(Img1, P1, 5, Scalar(196,255,128), 3);
+               }
+            }
+         }
+         //drawContours (Img0, fD.contours, -1, Scalar (0, 255, 0));
+      }
+      
+      M.setFigure(Img0, 0, 0);
+      M.setFigure(Img1, 0, 1);
+      M.show("Secuencia");
+      if ((val = waitKeyEx( 0 )) ==27 )
+         break;
+      switch (val)
+      {
+         case 'w'://Retrocede el frame
+            if (idxFrame > 0)
+            {
+               idxFrame = idxFrame - 1;
+               idxObj = oIndexes[idxFrame];
+            }
+            break;
+         case 's'://Avanza el frame
+            if (idxFrame < N-2)
+            {
+               oIndexes[idxFrame] = idxObj;
+               k = tObjs.Table[idxFrame][idxObj].next;
+               if (k != -1 && tObjs.Table[idxFrame+1][k].status == DEFINED)
+                  idxObj = k;
+               else
+                  idxObj = oIndexes[idxFrame+1];
+               idxFrame = idxFrame + 1;
+            }
+               break;
+            case 'a'://Retrocede el objeto
+               if (idxObj > 0)
+               {
+                  oIndexes[idxFrame] = idxObj;
+                  for (k = idxObj - 1; k >= 0 && tObjs.Table[idxFrame][k].status != DEFINED;--k);
+                  if (k != -1)
+                     idxObj = k;
+                  else
+                  {
+                     for (k = tObjs.maxElements - 1; k > idxObj && tObjs.Table[idxFrame][k].status != DEFINED;--k);
+                     idxObj = k;
+                  }
+               }
+               break;
+            case 'd'://Avanza el objeto
+               if (idxObj != -1)
+               {
+                  for (i = idxObj+1; i < tObjs.maxElements && tObjs.Table[idxFrame][i].status != DEFINED;++i);
+                  if (i != tObjs.maxElements)
+                     idxObj = i;
+                  else
+                  {
+                     for (i = 0; i < (unsigned)idxObj && tObjs.Table[idxFrame][i].status != DEFINED;++i);
+                     idxObj = i;
+                  }
+               }
+            break;
+      }
+   }
+   destroyWindow ("Secuencia");
+}
 
 int main (int argc, char **argv)
 {
@@ -311,7 +428,7 @@ int main (int argc, char **argv)
       }
       Frames.push_back (fD);
       imshow ("contornos", frameRGB);
-      waitKey (0);
+      waitKey (30);
       
       cout << "Frames[t].contours.size() = "
            << Frames[t].contours.size() << endl; 
@@ -386,6 +503,8 @@ int main (int argc, char **argv)
    imshow ("pf", outImage);
    waitKey (0);
    destroyWindow ("pf");
+   trackerViewer(tObjs, Frames);
+
    infile.close ();
    fileOut.close ();
    realPoints.close ();
