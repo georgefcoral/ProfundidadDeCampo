@@ -16,7 +16,7 @@ using namespace cv;
 */
 struct frameData
 {
-   /*!
+/*!
    \var string fileName
    \brief contiene el nombre del conjunto de archivos a procesar.
    */
@@ -57,6 +57,13 @@ struct frameData
    \brief Areas de cada uno de los objetos segmentados.
    */
    vector <float> areas;
+   
+   /*!
+   \var vector <float> perimetros;
+   \brief Perimetros de cada uno de los objetos segmentados.
+   */
+   vector <float> perimetros;
+   
    /*!
       \fn frameData()
       \brief Constructor de inicialización por defecto, inicializa los atributos vacíos. 
@@ -80,6 +87,7 @@ struct frameData
       momentsHu  = F.momentsHu;
       mc = F.mc;
       areas = F.areas;
+      perimetros = F.perimetros;
    }
 
    /*!
@@ -97,6 +105,7 @@ struct frameData
       momentsHu  = F.momentsHu;
       mc = F.mc;
       areas = F.areas;
+      perimetros = F.perimetros;
    }
 };
 

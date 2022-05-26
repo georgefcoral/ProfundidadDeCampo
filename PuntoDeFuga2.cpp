@@ -69,6 +69,21 @@ struct objDescriptor:public trackedObj
       \fn objDescriptor()
       \brief Constructor que inicializa a idxFrame e idxObj.
    */
+
+   /*!
+      \var float area;
+      \brief Contiene el area de cada objeto en cada cuadro.
+    */
+
+   float area;
+
+   /*!
+      \var float perimetro;
+      \brief Contiene el perimetro de cada objeto en cada cuadro.
+    */
+
+   float perimetro;
+
    objDescriptor ()
    {
       idxFrame = idxObj = -1;
@@ -89,6 +104,8 @@ struct objDescriptor:public trackedObj
       idxObj = io;
       momentsHu = F.momentsHu[idxObj];
       mc = F.mc[idxObj];
+      area = F.areas[idxObj];
+      perimetro = F.perimetros[idxObj];
    }
 
    /*!
@@ -103,6 +120,8 @@ struct objDescriptor:public trackedObj
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
+      area = O.area;
+      perimetro = O.perimetro;
    }
 
    /*!
@@ -118,6 +137,8 @@ struct objDescriptor:public trackedObj
       idxObj = O.idxObj;
       momentsHu = O.momentsHu;
       mc = O.mc;
+      area = O.area;
+      perimetro = O.perimetro;
    }
    
    /*!
@@ -154,7 +175,8 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
 
 void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData > Frames)
 {
-   int idxFrame = 0, k, idxObj=0, val, N, width, height;
+   int idxFrame = 0, k, idxObj=0, N, width, height;
+   char val;
    unsigned int i, j;
 
    N = Frames.size();
@@ -213,8 +235,28 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
       M.setFigure(Img0, 0, 0);
       M.setFigure(Img1, 0, 1);
       M.show("Secuencia");
+      /*Print DATA*/
+      cout<<endl;
+      cout<<"*************************************************************************"<<endl;
+      cout<<"Objeto " <<tObjs.Table[idxFrame][idxObj].idxObj << " ubicado en el cuadro "<<tObjs.Table[idxFrame][idxObj].idxFrame<<endl;
+      cout<<"Mass center = ["<<tObjs.Table[idxFrame][idxObj].mc<<"]"<<endl;
+      cout<<"Area: " <<tObjs.Table[idxFrame][idxObj].area <<endl;
+      cout<<"Perimetro: "<<tObjs.Table[idxFrame][idxObj].perimetro<<endl;
+
+      double humNorm = 0;
+      for(int i = 0; i<7 ; i++){
+         humNorm += tObjs.Table[idxFrame][idxObj].momentsHu.mH[i]*tObjs.Table[idxFrame][idxObj].momentsHu.mH[i];
+      }
+      cout<<"HUMomentsNormalized: "<<sqrt(humNorm)<<endl;
+
+      cout<<"*************************************************************************"<<endl;
+      cout<<endl;
+
+      /*END Print DATA*/
+
       if ((val = waitKeyEx( 0 )) ==27 )
          break;
+
       switch (val)
       {
          case 'w'://Retrocede el frame
@@ -425,6 +467,7 @@ int main (int argc, char **argv)
                -1 * copysign (1.0, mH.mH[j]) * log10 (abs (mH.mH[j]) + 1e-8);
          fD.momentsHu.push_back (mH);
          fD.areas.push_back (mo.m00);
+         fD.perimetros.push_back(arcLength(fD.contours[i],true));
       }
       Frames.push_back (fD);
       imshow ("contornos", frameRGB);
@@ -598,7 +641,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
       if(cola[i].size () < 4)
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
-      
+
       tracking<<"Obj"+to_string(idx++)+"=[";
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
@@ -610,12 +653,14 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          r = cola[i][j].x;
          c = cola[i][j].y;
          //cout << tObjs.Table[r][c].idxFrame << endl;
+
          tracking << tObjs.Table[r][c].mc.x << ","
                   << tObjs.Table[r][c].mc.y << ","
                   << tObjs.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
                   << tObjs.Table[r][c].objContour.size() << "; "
                   << endl;
+         
       }
       tracking << "];" << endl;
       
