@@ -93,8 +93,8 @@ struct objDescriptor:public trackedObj
       \fn objDescriptor (const frameData & F, int iF, int io)
       \brief Constructor de inicialización, asigna valores a idxFrame, idObj, momentsHu y mc.
       \param frameData &F
-      \param int iF
-      \param int io
+      \param int iF Índice del Frame
+      \param int io Índice del objeto
 
     */
    objDescriptor (const frameData & F, int iF, int io)
@@ -208,6 +208,7 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
    while(true)
    {
       Mat Img0, Img1;
+      vector <vector <Point> > oneVector;
       
       cvtColor (Frames[idxFrame].Image, Img0, COLOR_GRAY2RGB);
       cvtColor (Frames[idxFrame+1].Image, Img1, COLOR_GRAY2RGB);
@@ -219,6 +220,10 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
             Point P0((int)rint(tObjs.Table[idxFrame][idxObj].mc.x),(int)rint(tObjs.Table[idxFrame][idxObj].mc.y)); 
             
             circle(Img0, P0, 5, Scalar(255,196,128), 3);
+            oneVector.clear();
+            oneVector.push_back(tObjs.Table[idxFrame][idxObj].objContour);
+            drawContours (Img0, oneVector, -1, Scalar (0, 255, 0));
+
             if (idxFrame < N-2)
             {
                k = tObjs.Table[idxFrame][idxObj].next;
@@ -226,6 +231,9 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
                {
                   Point P1((int)rint(tObjs.Table[idxFrame+1][k].mc.x),(int)rint(tObjs.Table[idxFrame+1][k].mc.y)); 
                   circle(Img1, P1, 5, Scalar(196,255,128), 3);
+                  oneVector.clear();
+                  oneVector.push_back(tObjs.Table[idxFrame+1][k].objContour);
+                  drawContours (Img1, oneVector, -1, Scalar (255, 0, 0));
                }
             }
          }
@@ -269,17 +277,28 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
          case 's'://Avanza el frame
             if (idxFrame < N-2)
             {
-               oIndexes[idxFrame] = idxObj;
-               k = tObjs.Table[idxFrame][idxObj].next;
+               oIndexes[idxFrame] = idxObj; //Almacenamos el indice del objeto en el frame idxFrame
+               k = tObjs.Table[idxFrame][idxObj].next; //k es ahora hacia donde nos vamos a mover.
                if (k != -1 && tObjs.Table[idxFrame+1][k].status == DEFINED)
                   idxObj = k;
                else
-                  idxObj = oIndexes[idxFrame+1];
+               {
+                  unsigned int l;
+
+                  for (l=0;l<tObjs.maxElements;++l)
+                     if (tObjs.Table[idxFrame+1][l].status == DEFINED)
+                        break;
+                  if (l < tObjs.maxElements)
+                     idxObj = l;
+                  else
+                     l = 0;
+
+               }
                idxFrame = idxFrame + 1;
             }
                break;
             case 'a'://Retrocede el objeto
-               if (idxObj > 0)
+               if (idxObj >= 0)
                {
                   oIndexes[idxFrame] = idxObj;
                   for (k = idxObj - 1; k >= 0 && tObjs.Table[idxFrame][k].status != DEFINED;--k);
