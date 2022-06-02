@@ -183,9 +183,10 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
    width  = Frames[0].Image.cols;
    height = Frames[0].Image.rows;
 
-   Mosaic M(Size(width, height), 1, 2, 8, 8, CV_8UC3);
+   Mosaic M(Size(width, height), 2, 2, 8, 8, CV_8UC3);
 
-   
+   string info0 = "";
+   string info1 = "";
    vector <int> oIndexes;
    oIndexes.assign(N, -1);
 
@@ -212,18 +213,48 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
       
       cvtColor (Frames[idxFrame].Image, Img0, COLOR_GRAY2RGB);
       cvtColor (Frames[idxFrame+1].Image, Img1, COLOR_GRAY2RGB);
-
+      Mat Info0 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
+      Mat Info1 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
       if (idxObj != -1)
       {
+         cout<< "tObjs.Table[idxFrame][idxObj].prev"<<tObjs.Table[idxFrame][idxObj].prev<<endl;
+         if(tObjs.Table[idxFrame][idxObj].next != -1){
+            int m, n;
+            m = idxFrame;
+            n = idxObj;
+            while(tObjs.Table[m][n].next != -1){
+               Point p1(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del actual
+               n = tObjs.Table[m][n].next;
+               m = m+1;
+               Point p2(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del anterior
+
+               line(Img0,p1,p2,Scalar(255,0,255),3);
+            }
+
+         }
+
+
         if (tObjs.Table[idxFrame][idxObj].status == DEFINED)
          {
             Point P0((int)rint(tObjs.Table[idxFrame][idxObj].mc.x),(int)rint(tObjs.Table[idxFrame][idxObj].mc.y)); 
-            
+            double humNorm = 0;
+            for(int i = 0; i<7 ; i++){
+               humNorm += tObjs.Table[idxFrame][idxObj].momentsHu.mH[i]*tObjs.Table[idxFrame][idxObj].momentsHu.mH[i];
+            }
             circle(Img0, P0, 5, Scalar(255,196,128), 3);
             oneVector.clear();
             oneVector.push_back(tObjs.Table[idxFrame][idxObj].objContour);
             drawContours (Img0, oneVector, -1, Scalar (0, 255, 0));
-
+            info0 = "Objeto "+ to_string(tObjs.Table[idxFrame][idxObj].idxObj)+ ", Frame = "+to_string(tObjs.Table[idxFrame][idxObj].idxFrame);  
+            putText(Info0,info0,Point(50,50),0,.7,Scalar(255,255,128));
+            info0 ="MC = [" +to_string(tObjs.Table[idxFrame][idxObj].mc.x) +","+to_string(tObjs.Table[idxFrame][idxObj].mc.y)+"]";  
+            putText(Info0,info0,Point(50,100),0,.7,Scalar(255,255,128));
+            info0 ="Momentos de Hu Normalizados = "+ to_string(sqrt(humNorm));  
+            putText(Info0,info0,Point(50,150),0,.7,Scalar(255,255,128));
+            info0 ="Area = " + to_string(tObjs.Table[idxFrame][idxObj].area);  
+            putText(Info0,info0,Point(50,200),0,.7,Scalar(255,255,128));
+            info0 ="Perimetro = "+to_string(tObjs.Table[idxFrame][idxObj].perimetro);  
+            putText(Info0,info0,Point(50,250),0,.7,Scalar(255,255,128));
             if (idxFrame < N-2)
             {
                k = tObjs.Table[idxFrame][idxObj].next;
@@ -234,33 +265,45 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
                   oneVector.clear();
                   oneVector.push_back(tObjs.Table[idxFrame+1][k].objContour);
                   drawContours (Img1, oneVector, -1, Scalar (255, 0, 0));
+                  double humNorm2 = 0;
+            for(int i = 0; i<7 ; i++){
+               humNorm2 += tObjs.Table[idxFrame+1][k].momentsHu.mH[i]*tObjs.Table[idxFrame+1][k].momentsHu.mH[i];
+            }
+                  info1 = "Objeto "+ to_string(tObjs.Table[idxFrame+1][k].idxObj)+ ", Frame = "+to_string(tObjs.Table[idxFrame+1][k].idxFrame);  
+                  putText(Info1,info1,Point(50,50),0,.7,Scalar(255,255,128));
+                  info1 ="MC = [" +to_string(tObjs.Table[idxFrame+1][k].mc.x) +","+to_string(tObjs.Table[idxFrame+1][k].mc.y)+"]";  
+                  putText(Info1,info1,Point(50,100),0,.7,Scalar(255,255,128));
+                  info1 ="Momentos de Hu Normalizados = "+ to_string(sqrt(humNorm2));  
+                  putText(Info1,info1,Point(50,150),0,.7,Scalar(255,255,128));
+                  info1 ="Area = " + to_string(tObjs.Table[idxFrame+1][k].area);  
+                  putText(Info1,info1,Point(50,200),0,.7,Scalar(255,255,128));
+                  info1 ="Perimetro = "+to_string(tObjs.Table[idxFrame+1][k].perimetro);  
+                  putText(Info1,info1,Point(50,250),0,.7,Scalar(255,255,128));
+
+
+
                }
             }
+
+
          }
          //drawContours (Img0, fD.contours, -1, Scalar (0, 255, 0));
       }
       
+
+
+
+
+
+
+
       M.setFigure(Img0, 0, 0);
       M.setFigure(Img1, 0, 1);
+      M.setFigure(Info0,1,0);
+      M.setFigure(Info1,1,1);
       M.show("Secuencia");
-      /*Print DATA*/
-      cout<<endl;
-      cout<<"*************************************************************************"<<endl;
-      cout<<"Objeto " <<tObjs.Table[idxFrame][idxObj].idxObj << " ubicado en el cuadro "<<tObjs.Table[idxFrame][idxObj].idxFrame<<endl;
-      cout<<"Mass center = ["<<tObjs.Table[idxFrame][idxObj].mc<<"]"<<endl;
-      cout<<"Area: " <<tObjs.Table[idxFrame][idxObj].area <<endl;
-      cout<<"Perimetro: "<<tObjs.Table[idxFrame][idxObj].perimetro<<endl;
 
-      double humNorm = 0;
-      for(int i = 0; i<7 ; i++){
-         humNorm += tObjs.Table[idxFrame][idxObj].momentsHu.mH[i]*tObjs.Table[idxFrame][idxObj].momentsHu.mH[i];
-      }
-      cout<<"HUMomentsNormalized: "<<sqrt(humNorm)<<endl;
 
-      cout<<"*************************************************************************"<<endl;
-      cout<<endl;
-
-      /*END Print DATA*/
 
       if ((val = waitKeyEx( 0 )) ==27 )
          break;
