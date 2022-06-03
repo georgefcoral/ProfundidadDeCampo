@@ -213,6 +213,25 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
       
       cvtColor (Frames[idxFrame].Image, Img0, COLOR_GRAY2RGB);
       cvtColor (Frames[idxFrame+1].Image, Img1, COLOR_GRAY2RGB);
+
+      //Dibuja los contornos si definidos.
+      for (i=0;i<tObjs.maxElements;++i)
+      {
+         if (tObjs.Table[idxFrame][i].status == DEFINED)
+         {
+            oneVector.clear();
+            oneVector.push_back(tObjs.Table[idxFrame][i].objContour);
+            drawContours (Img0, oneVector, -1, Scalar (0, 0, 255));
+         }
+         if (idxFrame+1 < (int)tObjs.maxSeq && tObjs.Table[idxFrame+1][i].status == DEFINED)
+         {
+            oneVector.clear();
+            oneVector.push_back(tObjs.Table[idxFrame+1][i].objContour);
+            drawContours (Img1, oneVector, -1, Scalar (0, 0, 255));
+         }
+      }
+
+
       Mat Info0 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
       Mat Info1 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
       if (idxObj != -1)
@@ -222,10 +241,16 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
             int m, n;
             m = idxFrame;
             n = idxObj;
-            while(tObjs.Table[m][n].next != -1){
+            while(m > 0 && tObjs.Table[m][n].prev != -1)
+            {
+               n = tObjs.Table[m][n].prev;
+               m--;
+            }
+            while(tObjs.Table[m][n].next != -1)
+            {
                Point p1(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del actual
                n = tObjs.Table[m][n].next;
-               m = m+1;
+               m++;
                Point p2(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del anterior
 
                line(Img0,p1,p2,Scalar(255,0,255),3);
@@ -242,10 +267,12 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
                humNorm += tObjs.Table[idxFrame][idxObj].momentsHu.mH[i]*tObjs.Table[idxFrame][idxObj].momentsHu.mH[i];
             }
             circle(Img0, P0, 5, Scalar(255,196,128), 3);
+
             oneVector.clear();
             oneVector.push_back(tObjs.Table[idxFrame][idxObj].objContour);
             drawContours (Img0, oneVector, -1, Scalar (0, 255, 0));
-            info0 = "Objeto "+ to_string(tObjs.Table[idxFrame][idxObj].idxObj)+ ", Frame = "+to_string(tObjs.Table[idxFrame][idxObj].idxFrame);  
+
+            info0 = "Objeto "+ to_string(tObjs.Table[idxFrame][idxObj].idxObj)+ "/"+to_string(tObjs.objsFrame(idxFrame))+", Frame = "+to_string(tObjs.Table[idxFrame][idxObj].idxFrame);  
             putText(Info0,info0,Point(50,50),0,.7,Scalar(255,255,128));
             info0 ="MC = [" +to_string(tObjs.Table[idxFrame][idxObj].mc.x) +","+to_string(tObjs.Table[idxFrame][idxObj].mc.y)+"]";  
             putText(Info0,info0,Point(50,100),0,.7,Scalar(255,255,128));

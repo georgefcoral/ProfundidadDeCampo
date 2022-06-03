@@ -143,13 +143,15 @@ struct temporalObjsMem
             Table[idx][i] = o[i];
             Table[idx][i].wCounter = waitingCounter;
             Table[idx][i].status = DEFINED;
-            Table[idxPrev][i].next = Table[idxPrev][i].prev= -1;
+            Table[idx][i].next = Table[idx][i].prev= -1;
+            //Table[idxPrev][i].next = Table[idxPrev][i].prev= -1;
         }
         for (;i<maxElements;++i)
         {
             Table[idx][i].status = NOTDEFINED;
             Table[idx][i].wCounter = waitingCounter;
-            Table[idxPrev][i].next = Table[idxPrev][i].prev= -1;
+            Table[idx][i].next = Table[idx][i].prev= -1;
+            //Table[idxPrev][i].next = Table[idxPrev][i].prev= -1;
         }
 
         if (i < o.size())
@@ -162,9 +164,12 @@ struct temporalObjsMem
                     
                 if (!o.size() && Table[idxPrev][i].status != NOTDEFINED)
                 {
+                      std::cerr << "Ejele que si entre! :" << o.size() << endl;
                     Table[idx][i].status = MISSING;
                     Table[idx][i].wCounter = Table[idxPrev][i].status == DEFINED ? waitingCounter :Table[idxPrev][i].wCounter - 1;
-                    Table[idx][i].next = Table[idxPrev][i].prev;
+                    //Table[idx][i].next = Table[idxPrev][i].prev;
+                    Table[idxPrev][i].next = -1;
+
                 }
                 else
                 {
@@ -193,7 +198,8 @@ struct temporalObjsMem
                     {
                         Table[idx][best].status = MISSING;
                         Table[idx][best].wCounter =Table[idx][best].wCounter-1;
-                        Table[idxPrev][i].next = Table[idxPrev][i].prev;
+                        //Table[idxPrev][i].next = Table[idxPrev][i].prev;
+                        Table[idxPrev][i].next = -1;
                     }
                 }
             }
@@ -249,6 +255,18 @@ struct temporalObjsMem
             std::cout << std::endl;
         }
         std::cout << std::endl;
+    }
+    int objsFrame(unsigned int idxFrame)
+    {
+      int cont = 0;
+      unsigned int i;
+
+      if (idxFrame >= maxSeq)
+         return -1;
+      for (i=0;i<maxElements;++i)
+         if (Table[idxFrame][i].status == DEFINED)
+            cont++;
+      return cont;
     }
 };
 
