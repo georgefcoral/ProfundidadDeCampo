@@ -153,7 +153,7 @@ struct featDescriptor:public trackedFeature
    {
       featDescriptor *p = (featDescriptor *) & o;
 
-      return pow (p->mc.x - mc.x, 2.) + pow (p->mc.y - mc.y, 2.);
+      return sqrt(pow (p->mc.x - mc.x, 2.) + pow (p->mc.y - mc.y, 2.));
    }
    
    /*!
@@ -180,10 +180,13 @@ struct tableView
    unsigned int rowsView, colsView;
    unsigned int nElements, seqSz;
    double scale;
-   Scalar notdef, def, missing;
+   Scalar notdef, def;
 
    tableView (tempFeatureTable < featDescriptor > &tFeats, int s = 15)
    {
+      unsigned int i, j, r, c;
+      char buff[8];
+
       sz = s;
       sep = 3;
       nElements = tFeats.maxElements;
@@ -192,16 +195,38 @@ struct tableView
       rowsMap = sz * nElements + sep * (nElements + 1);
       colsView = colsMap + 2 * sz;
       rowsView = rowsMap + 4 * sz;
-      notdef = Scalar(192, 128, 96);
-      missing = Scalar(128, 192, 96);
-      def = Scalar(96, 128, 192);
+      def = Scalar(255, 128);
+      notdef = Scalar(24, 0, 48);
       scale = sz/15.;
       step = sz + sep;
 
 
-      imgView = Mat::zeros(rowsView, colsView,CV_8UC3);
+      imgView = Mat::zeros(rowsView, colsView, CV_8UC3);
       mapLayer = imgView(Rect(2 * sz, 4 * sz, colsMap, rowsMap));
-      linesLayer = Mat::zeros(colsMap, rowsMap,CV_8UC3);
+      linesLayer = Mat::zeros(rowsMap, colsMap, CV_8UC3);
+
+
+      for (i = 0, r = sep; i < nElements; ++i, r += step )
+      {
+         snprintf(buff,8,"%03d", i);
+         putText(imgView, buff, Point(0, r + 4 * sz + 12*scale) , 0 , .5*scale,\
+           Scalar(128,255,128), 1, LINE_AA, false);
+      }
+      
+      for (j=0, c = sep; j < seqSz; ++j, c += step)
+      {
+         char miniBuff[2];
+         miniBuff[1] = 0;
+
+         snprintf(buff,8,"%03d", j);
+         for (i=0, r = sep; i < 3; ++i, r += step)
+         {
+            miniBuff[0] = buff[i];
+            putText(imgView, miniBuff, Point(c + 2 * sz, r + 12 * scale) , 0 , 0.5 * scale,\
+             Scalar(128,255,128), 1, LINE_AA, false);
+         }
+      }
+
    }
 
    void drawSquare(unsigned int elem, unsigned int seq, bool kind = true)
@@ -239,30 +264,8 @@ struct tableView
    {
       unsigned int i, j, r, c, sz2;
       Range rx, ry;
-      char buff[8];
       sz2 = sz/2;
-
-      for (i = 0, r = sep; i < nElements; ++i, r += step )
-      {
-         snprintf(buff,8,"%03d", i);
-         putText(imgView, buff, Point(0, r + 4 * sz + 12*scale) , 0 , .5*scale,\
-           Scalar(128,255,128), 1, LINE_AA, false);
-      }
       
-      for (j=0, c = sep; j < seqSz; ++j, c += step)
-      {
-         char miniBuff[2];
-         miniBuff[1] = 0;
-
-         snprintf(buff,8,"%03d", j);
-         for (i=0, r = sep; i < 3; ++i, r += step)
-         {
-            miniBuff[0] = buff[i];
-            putText(imgView, miniBuff, Point(c + 2 * sz, r + 12 * scale) , 0 , 0.5 * scale,\
-             Scalar(128,255,128), 1, LINE_AA, false);
-         }
-      }
-
       for (i = 0, r = sep; i < nElements; ++i, r += step )
       {
          ry = Range(r, r+sz);
@@ -365,16 +368,17 @@ void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameDa
       if (idxFeat != -1)
       {
 //         cout<< "tFeats.Table[idxFrame][idxFeat].prev"<<tFeats.Table[idxFrame][idxFeat].prev<<endl;
-         if(tFeats.Table[idxFrame][idxFeat].next[0].idx != -1){
+         if(tFeats.Table[idxFrame][idxFeat].next.size())
+         {
             int m, n;
             m = idxFrame;
             n = idxFeat;
-            while(m > 0 && tFeats.Table[m][n].prev[0].idx != -1)
+            while(m > 0 && tFeats.Table[m][n].prev.size())
             {
                n = tFeats.Table[m][n].prev[0].idx;
                m--;
             }
-            while(tFeats.Table[m][n].next[0].idx != -1)
+            while(tFeats.Table[m][n].next.size())
             {
                Point p1(tFeats.Table[m][n].mc.x,tFeats.Table[m][n].mc.y);//Punto del actual
                n = tFeats.Table[m][n].next[0].idx;
@@ -394,7 +398,7 @@ void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameDa
             for(int i = 0; i<7 ; i++){
                humNorm += tFeats.Table[idxFrame][idxFeat].momentsHu.mH[i]*tFeats.Table[idxFrame][idxFeat].momentsHu.mH[i];
             }
-            circle(Img0, P0, 5, Scalar(255,196,128), 3);
+            //circle(Img0, P0, 5, Scalar(255,196,128), 3);
 
             oneVector.clear();
             oneVector.push_back(tFeats.Table[idxFrame][idxFeat].objContour);
@@ -410,14 +414,27 @@ void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameDa
             putText(Info0,info0,Point(50,200),0,.7,Scalar(255,255,128));
             info0 ="Perimetro = "+to_string(tFeats.Table[idxFrame][idxFeat].perimetro);  
             putText(Info0,info0,Point(50,250),0,.7,Scalar(255,255,128));
-            info0 = "Next, Prev = " + to_string(tFeats.Table[idxFrame][idxFeat].next[0].idx) + ", " +  to_string(tFeats.Table[idxFrame][idxFeat].prev[0].idx) ;
-            putText(Info0,info0,Point(50,300),0,.7,Scalar(255,255,128));
+
+            {
+               int nx, pr;
+
+               if (tFeats.Table[idxFrame][idxFeat].next.size())
+                  nx = tFeats.Table[idxFrame][idxFeat].next[0].idx;
+               else
+                  nx = -1;
+               if (tFeats.Table[idxFrame][idxFeat].prev.size())
+                  pr = tFeats.Table[idxFrame][idxFeat].prev[0].idx;
+               else
+                  pr = -1;
+               info0 = "Next, Prev = " + to_string(nx) + ", " +  to_string(pr) ;
+               putText(Info0,info0,Point(50,300),0,.7,Scalar(255,255,128));
+            }
 
             if (idxFrame < N-2)
             {
-               k = tFeats.Table[idxFrame][idxFeat].next[0].idx;
-               if (k >= 0)
+               if (tFeats.Table[idxFrame][idxFeat].next.size())
                {
+                  k = tFeats.Table[idxFrame][idxFeat].next[0].idx;
                   Point P1((int)rint(tFeats.Table[idxFrame+1][k].mc.x),(int)rint(tFeats.Table[idxFrame+1][k].mc.y)); 
                   circle(Img1, P1, 5, Scalar(196,255,128), 3);
                   oneVector.clear();
@@ -437,11 +454,22 @@ void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameDa
                   putText(Info1,info1,Point(50,200),0,.7,Scalar(255,255,128));
                   info1 ="Perimetro = "+to_string(tFeats.Table[idxFrame+1][k].perimetro);  
                   putText(Info1,info1,Point(50,250),0,.7,Scalar(255,255,128));
-                  info1 = "Next, Prev = " + to_string(tFeats.Table[idxFrame+1][k].next[0].idx) + ", " +  to_string(tFeats.Table[idxFrame+1][k].prev[0].idx) ;
-                  putText(Info1,info1,Point(50,300),0,.7,Scalar(255,255,128));
 
+                  
+                  {
+                     int nx, pr;
 
-
+                     if (tFeats.Table[idxFrame+1][k].next.size())
+                        nx = tFeats.Table[idxFrame+1][k].next[0].idx;
+                     else
+                        nx = -1;
+                     if (tFeats.Table[idxFrame+1][k].prev.size())
+                        pr = tFeats.Table[idxFrame+1][k].prev[0].idx;
+                     else
+                        pr = -1;
+                     info0 = "Next, Prev = " + to_string(nx) + ", " +  to_string(pr) ;
+                     putText(Info1,info1,Point(50,300),0,.7,Scalar(255,255,128));
+                  }
                }
             }
 
@@ -482,7 +510,11 @@ void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameDa
             if (idxFrame < N-2)
             {
                oIndexes[idxFrame] = idxFeat; //Almacenamos el indice del objeto en el frame idxFrame
-               k = tFeats.Table[idxFrame][idxFeat].next[0].idx; //k es ahora hacia donde nos vamos a mover.
+               if (tFeats.Table[idxFrame][idxFeat].next.size())
+                  //k es ahora hacia donde nos vamos a mover.
+                  k = tFeats.Table[idxFrame][idxFeat].next[0].idx;
+               else
+                  k = -1;
                if (k != -1 && tFeats.Table[idxFrame+1][k].status == DEFINED)
                   idxFeat = k;
                else
@@ -545,7 +577,7 @@ int main (int argc, char **argv)
    int dilation_size = 1;
    unsigned int maxObjs;
 
-   double umbralDistance = 30.;
+   double umbralDistance = 20.;
    double umbralHu = 500.;
    double umbralArea = 50.;
    vector < frameData > Frames;
@@ -619,8 +651,7 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   tempFeatureTable < featDescriptor > tFeats (maxObjs, umbralFrame,\
-                                            pow (umbralDistance, 2));
+   tempFeatureTable < featDescriptor > tFeats (maxObjs, umbralFrame, umbralDistance);
    tableView tempTableView (tFeats, 15);
 
    infile.open (dataFiles);
@@ -726,7 +757,7 @@ int main (int argc, char **argv)
    //Codigo Ajuste de puntos a una linea.
    vector < Mat > linesToFit;
 
-   getTracking (tFeats, umbralFrame, 500);
+   //getTracking (tFeats, umbralFrame, 500);
 
    //for (j = 0; j < tFeats.maxElements; ++j)//Número de objetos
    realPoints << "RP = [";
@@ -841,7 +872,10 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          {
             k_old = i;
             l_old = j;
-            k = tFeats.Table[j][i].next[0].idx;
+            if (tFeats.Table[j][i].next.size())
+               k = tFeats.Table[j][i].next[0].idx;
+            else
+               k = -1;
             l = j + 1;
             cout << endl 
                  << "Processing Cell (" << i << ", " << j << ")"
@@ -860,7 +894,10 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                //Encontramos en el renglon siguiente el correspondiente.
                l_old = l;
                k_old = k;
-               k = tFeats.Table[l][k].next[0].idx;
+               if (tFeats.Table[l][k].next.size())
+                  k = tFeats.Table[l][k].next[0].idx;
+               else
+                  k = -1;
                l++;
             }
          }
