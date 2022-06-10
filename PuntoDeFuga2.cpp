@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <frameData.h>
 #include <deepFunctions2.h>
-#include <ObjTracker.h>
+#include <FeatureTracker.h>
 #include <sortContours.h>
 
 using namespace cv;
@@ -30,11 +30,11 @@ RNG rng (12345);
 
 
 /*!
-\struct objDescriptor 
+\struct featDescriptor 
 \brief Esta clase guarda contiene las características de un cuadro, con la finalidad de realizar un seguimiento múltiple a cada uno de los objetos de interés.
 */
 
-struct objDescriptor:public trackedObj
+struct featDescriptor:public trackedFeature
 {
    /*!
       \var int idxFrame;
@@ -42,10 +42,10 @@ struct objDescriptor:public trackedObj
     */
    int idxFrame;
    /*!
-      \var int idxObj;
+      \var int idxFeat;
       \brief Contiene el identificador de cada objeto en cada cuadro.
     */
-   int idxObj;
+   int idxFeat;
 
    /*!
       \var vector < Point > objContour;
@@ -66,8 +66,8 @@ struct objDescriptor:public trackedObj
    Point2f mc;
 
    /*!
-      \fn objDescriptor()
-      \brief Constructor que inicializa a idxFrame e idxObj.
+      \fn featDescriptor()
+      \brief Constructor que inicializa a idxFrame e idxFeat.
    */
 
    /*!
@@ -84,40 +84,41 @@ struct objDescriptor:public trackedObj
 
    float perimetro;
 
-   objDescriptor ()
+   featDescriptor ()
    {
-      idxFrame = idxObj = -1;
+      idxFrame = idxFeat = -1;
    }
 
    /*!
-      \fn objDescriptor (const frameData & F, int iF, int io)
+      \fn featDescriptor (const frameData & F, int iF, int io)
       \brief Constructor de inicialización, asigna valores a idxFrame, idObj, momentsHu y mc.
       \param frameData &F
       \param int iF Índice del Frame
       \param int io Índice del objeto
 
     */
-   objDescriptor (const frameData & F, int iF, int io)
+   featDescriptor (const frameData & F, int iF, int io)
    {
       objContour = F.contours[io];
       idxFrame = iF;
-      idxObj = io;
-      momentsHu = F.momentsHu[idxObj];
-      mc = F.mc[idxObj];
-      area = F.areas[idxObj];
-      perimetro = F.perimetros[idxObj];
+      idxFeat = io;
+      momentsHu = F.momentsHu[idxFeat];
+      mc = F.mc[idxFeat];
+      area = F.areas[idxFeat];
+      perimetro = F.perimetros[idxFeat];
    }
 
    /*!
-      \fn objDescriptor (const objDescriptor & O)
+      \fn featDescriptor (const featDescriptor & O)
       \brief Constructor de copia. Crea un objeto a partir de otro objeto de esta misma clase. 
-      \param objDescriptor &O
+      \param featDescriptor &O
    */
-   objDescriptor (const objDescriptor & O)
+   featDescriptor (const featDescriptor & O)
    {
+      *((trackedFeature *)this) = O;
       objContour = O.objContour;
       idxFrame = O.idxFrame;
-      idxObj = O.idxObj;
+      idxFeat = O.idxFeat;
       momentsHu = O.momentsHu;
       mc = O.mc;
       area = O.area;
@@ -125,16 +126,17 @@ struct objDescriptor:public trackedObj
    }
 
    /*!
-      \fn void operator = (const objDescriptor & O)
+      \fn void operator = (const featDescriptor & O)
       \brief Sobre carga del operador igual (=).
-      \param objDescriptor &O
+      \param featDescriptor &O
    */
-   void operator = (const objDescriptor & O)
+   void operator = (const featDescriptor & O)
    {
+      *((trackedFeature *)this) = O;
       objContour.clear();
       objContour = O.objContour;
       idxFrame = O.idxFrame;
-      idxObj = O.idxObj;
+      idxFeat = O.idxFeat;
       momentsHu = O.momentsHu;
       mc = O.mc;
       area = O.area;
@@ -142,14 +144,14 @@ struct objDescriptor:public trackedObj
    }
    
    /*!
-      \fn double Distance (const trackedObj & o)
+      \fn double Distance (const trackedFeature & o)
       \brief Función que incluye la distancia entre dos objetos con respecto a sus centros de masa.
-      \param trackedObj & o
+      \param trackedFeature & o
       \return distance
    */
-   double Distance (const trackedObj & o)
+   double Distance (const trackedFeature & o)
    {
-      objDescriptor *p = (objDescriptor *) & o;
+      featDescriptor *p = (featDescriptor *) & o;
 
       return pow (p->mc.x - mc.x, 2.) + pow (p->mc.y - mc.y, 2.);
    }
@@ -163,19 +165,140 @@ struct objDescriptor:public trackedObj
       stringstream ss;
       string s;
 
-      ss << "Obj[" << idxFrame << "][" << idxObj << "]= [" << mc.x << ", " <<
+      ss << "Obj[" << idxFrame << "][" << idxFeat << "]= [" << mc.x << ", " <<
          mc.y << "]";
       s = ss.str ();
       return s;
    }
 };
 
-void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
+struct tableView
+{
+   Mat mapLayer, linesLayer, imgView;
+   unsigned int sz, sep, step;
+   unsigned int rowsMap, colsMap;
+   unsigned int rowsView, colsView;
+   unsigned int nElements, seqSz;
+   double scale;
+   Scalar notdef, def, missing;
+
+   tableView (tempFeatureTable < featDescriptor > &tFeats, int s = 15)
+   {
+      sz = s;
+      sep = 3;
+      nElements = tFeats.maxElements;
+      seqSz = tFeats.maxSeq;
+      colsMap = sz * seqSz + sep * (seqSz + 1);
+      rowsMap = sz * nElements + sep * (nElements + 1);
+      colsView = colsMap + 2 * sz;
+      rowsView = rowsMap + 4 * sz;
+      notdef = Scalar(192, 128, 96);
+      missing = Scalar(128, 192, 96);
+      def = Scalar(96, 128, 192);
+      scale = sz/15.;
+      step = sz + sep;
+
+
+      imgView = Mat::zeros(rowsView, colsView,CV_8UC3);
+      mapLayer = imgView(Rect(2 * sz, 4 * sz, colsMap, rowsMap));
+      linesLayer = Mat::zeros(colsMap, rowsMap,CV_8UC3);
+   }
+
+   void drawSquare(unsigned int elem, unsigned int seq, bool kind = true)
+   {
+      //Upper-left corner at (sep-2, sep-2)
+      //width-height: (sz+2, sz+2)
+      if (elem < nElements && seq < seqSz)
+      {
+         Rect R(sep - 2 + seq * step, sep - 2 + elem * step, sz + 4, sz + 4);
+         if (kind)
+            rectangle(mapLayer, R, Scalar(0, 0, 255), 2);
+         else
+            rectangle(mapLayer, R, Scalar(0, 0, 0), 2);
+         mergeLayers();
+      }
+   }
+
+   void mergeLayers()
+   {
+      unsigned int i, j;
+      Vec3b *it1, *it2;
+      Vec3b vZero(0,0,0);
+
+      for (i=0;i<rowsMap;++i)
+      {
+         it1 = mapLayer.ptr<Vec3b>(i);
+         it2 = linesLayer.ptr<Vec3b>(i);
+         for (j=0;j<colsMap;++j,it1++, it2++)
+            if (*it2 != vZero)
+               *it1 = *it2;
+      }
+   }
+
+   void refresh(tempFeatureTable < featDescriptor > &tFeats)
+   {
+      unsigned int i, j, r, c, sz2;
+      Range rx, ry;
+      char buff[8];
+      sz2 = sz/2;
+
+      for (i = 0, r = sep; i < nElements; ++i, r += step )
+      {
+         snprintf(buff,8,"%03d", i);
+         putText(imgView, buff, Point(0, r + 4 * sz + 12*scale) , 0 , .5*scale,\
+           Scalar(128,255,128), 1, LINE_AA, false);
+      }
+      
+      for (j=0, c = sep; j < seqSz; ++j, c += step)
+      {
+         char miniBuff[2];
+         miniBuff[1] = 0;
+
+         snprintf(buff,8,"%03d", j);
+         for (i=0, r = sep; i < 3; ++i, r += step)
+         {
+            miniBuff[0] = buff[i];
+            putText(imgView, miniBuff, Point(c + 2 * sz, r + 12 * scale) , 0 , 0.5 * scale,\
+             Scalar(128,255,128), 1, LINE_AA, false);
+         }
+      }
+
+      for (i = 0, r = sep; i < nElements; ++i, r += step )
+      {
+         ry = Range(r, r+sz);
+         for (j=0, c = sep; j < seqSz; ++j, c += step)
+         {
+            rx = Range(c, c+sz);
+            if (tFeats.Table[j][i].status == DEFINED)
+               mapLayer(ry, rx) = def;
+            else
+               mapLayer(ry, rx) = notdef;
+         }
+      }
+      for (i = 0, r = sz2 + sep; i < nElements; ++i, r += step)
+         for (j=0, c = sz2 + sep; j < seqSz; ++j, c += step)
+         {
+            
+            if (tFeats.Table[j][i].matched)
+            {
+
+               Point P1(c,r), P2(c+sz+sep, tFeats.Table[j][i].next[0].idx*(sz+sep)+sz2+sep);
+               line(linesLayer, P1, P2,Scalar(255,255,255), 2);
+               circle(linesLayer, P1, 2, Scalar(192, 192, 192), -1);
+               circle(linesLayer, P2, 2, Scalar(192, 192, 192), -1);
+            }
+         }
+      mergeLayers();
+   }
+};
+
+
+void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                   int numObj);
 
-void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData > Frames)
+void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameData > Frames, Point2f &pf)
 {
-   int idxFrame = 0, k, idxObj=0, N, width, height;
+   int idxFrame = 0, k, idxFeat=0, N, width, height;
    char val;
    unsigned int i, j;
 
@@ -194,16 +317,21 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
    namedWindow ("Secuencia", 1);
 
    //Buscamos el primer objeto definido de la primera imagen
-   for (j = 0; j< tObjs.maxSeq;++j)
+   for (j = 0; j< tFeats.maxSeq;++j)
    {
-      for (i = 0; i < tObjs.maxElements && tObjs.Table[j][i].status != DEFINED;++i);
-      if (i == tObjs.maxElements)
-         idxObj = -1; // No h ay elemento definido en ese frame.
+      for (i = 0; i < tFeats.maxElements && tFeats.Table[j][i].status != DEFINED;++i);
+      if (i == tFeats.maxElements)
+         idxFeat = -1; // No h ay elemento definido en ese frame.
       else
       {
-         idxObj = i;
+         idxFeat = i;
          break;
       }
+   }
+   if (j == tFeats.maxSeq)
+   {
+      cerr << "There are no objects in the sequence!" << endl;
+      return;
    }
    idxFrame = j;
    while(true)
@@ -215,18 +343,18 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
       cvtColor (Frames[idxFrame+1].Image, Img1, COLOR_GRAY2RGB);
 
       //Dibuja los contornos si definidos.
-      for (i=0;i<tObjs.maxElements;++i)
+      for (i=0;i<tFeats.maxElements;++i)
       {
-         if (tObjs.Table[idxFrame][i].status == DEFINED)
+         if (tFeats.Table[idxFrame][i].status == DEFINED)
          {
             oneVector.clear();
-            oneVector.push_back(tObjs.Table[idxFrame][i].objContour);
+            oneVector.push_back(tFeats.Table[idxFrame][i].objContour);
             drawContours (Img0, oneVector, -1, Scalar (0, 0, 255));
          }
-         if (idxFrame+1 < (int)tObjs.maxSeq && tObjs.Table[idxFrame+1][i].status == DEFINED)
+         if (idxFrame+1 < (int)tFeats.maxSeq && tFeats.Table[idxFrame+1][i].status == DEFINED)
          {
             oneVector.clear();
-            oneVector.push_back(tObjs.Table[idxFrame+1][i].objContour);
+            oneVector.push_back(tFeats.Table[idxFrame+1][i].objContour);
             drawContours (Img1, oneVector, -1, Scalar (0, 0, 255));
          }
       }
@@ -234,24 +362,24 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
 
       Mat Info0 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
       Mat Info1 = Mat::zeros(Img0.rows,Img0.cols,CV_8UC3);
-      if (idxObj != -1)
+      if (idxFeat != -1)
       {
-         cout<< "tObjs.Table[idxFrame][idxObj].prev"<<tObjs.Table[idxFrame][idxObj].prev<<endl;
-         if(tObjs.Table[idxFrame][idxObj].next != -1){
+//         cout<< "tFeats.Table[idxFrame][idxFeat].prev"<<tFeats.Table[idxFrame][idxFeat].prev<<endl;
+         if(tFeats.Table[idxFrame][idxFeat].next[0].idx != -1){
             int m, n;
             m = idxFrame;
-            n = idxObj;
-            while(m > 0 && tObjs.Table[m][n].prev != -1)
+            n = idxFeat;
+            while(m > 0 && tFeats.Table[m][n].prev[0].idx != -1)
             {
-               n = tObjs.Table[m][n].prev;
+               n = tFeats.Table[m][n].prev[0].idx;
                m--;
             }
-            while(tObjs.Table[m][n].next != -1)
+            while(tFeats.Table[m][n].next[0].idx != -1)
             {
-               Point p1(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del actual
-               n = tObjs.Table[m][n].next;
+               Point p1(tFeats.Table[m][n].mc.x,tFeats.Table[m][n].mc.y);//Punto del actual
+               n = tFeats.Table[m][n].next[0].idx;
                m++;
-               Point p2(tObjs.Table[m][n].mc.x,tObjs.Table[m][n].mc.y);//Punto del anterior
+               Point p2(tFeats.Table[m][n].mc.x,tFeats.Table[m][n].mc.y);//Punto del anterior
 
                line(Img0,p1,p2,Scalar(255,0,255),3);
             }
@@ -259,53 +387,58 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
          }
 
 
-        if (tObjs.Table[idxFrame][idxObj].status == DEFINED)
+        if (tFeats.Table[idxFrame][idxFeat].status == DEFINED)
          {
-            Point P0((int)rint(tObjs.Table[idxFrame][idxObj].mc.x),(int)rint(tObjs.Table[idxFrame][idxObj].mc.y)); 
+            Point P0((int)rint(tFeats.Table[idxFrame][idxFeat].mc.x),(int)rint(tFeats.Table[idxFrame][idxFeat].mc.y)); 
             double humNorm = 0;
             for(int i = 0; i<7 ; i++){
-               humNorm += tObjs.Table[idxFrame][idxObj].momentsHu.mH[i]*tObjs.Table[idxFrame][idxObj].momentsHu.mH[i];
+               humNorm += tFeats.Table[idxFrame][idxFeat].momentsHu.mH[i]*tFeats.Table[idxFrame][idxFeat].momentsHu.mH[i];
             }
             circle(Img0, P0, 5, Scalar(255,196,128), 3);
 
             oneVector.clear();
-            oneVector.push_back(tObjs.Table[idxFrame][idxObj].objContour);
+            oneVector.push_back(tFeats.Table[idxFrame][idxFeat].objContour);
             drawContours (Img0, oneVector, -1, Scalar (0, 255, 0));
 
-            info0 = "Objeto "+ to_string(tObjs.Table[idxFrame][idxObj].idxObj)+ "/"+to_string(tObjs.objsFrame(idxFrame))+", Frame = "+to_string(tObjs.Table[idxFrame][idxObj].idxFrame);  
+            info0 = "Objeto "+ to_string(tFeats.Table[idxFrame][idxFeat].idxFeat)+ "/"+to_string(tFeats.featsFrame(idxFrame))+", Frame = "+to_string(tFeats.Table[idxFrame][idxFeat].idxFrame);  
             putText(Info0,info0,Point(50,50),0,.7,Scalar(255,255,128));
-            info0 ="MC = [" +to_string(tObjs.Table[idxFrame][idxObj].mc.x) +","+to_string(tObjs.Table[idxFrame][idxObj].mc.y)+"]";  
+            info0 ="MC = [" +to_string(tFeats.Table[idxFrame][idxFeat].mc.x) +","+to_string(tFeats.Table[idxFrame][idxFeat].mc.y)+"]";  
             putText(Info0,info0,Point(50,100),0,.7,Scalar(255,255,128));
             info0 ="Momentos de Hu Normalizados = "+ to_string(sqrt(humNorm));  
             putText(Info0,info0,Point(50,150),0,.7,Scalar(255,255,128));
-            info0 ="Area = " + to_string(tObjs.Table[idxFrame][idxObj].area);  
+            info0 ="Area = " + to_string(tFeats.Table[idxFrame][idxFeat].area);  
             putText(Info0,info0,Point(50,200),0,.7,Scalar(255,255,128));
-            info0 ="Perimetro = "+to_string(tObjs.Table[idxFrame][idxObj].perimetro);  
+            info0 ="Perimetro = "+to_string(tFeats.Table[idxFrame][idxFeat].perimetro);  
             putText(Info0,info0,Point(50,250),0,.7,Scalar(255,255,128));
+            info0 = "Next, Prev = " + to_string(tFeats.Table[idxFrame][idxFeat].next[0].idx) + ", " +  to_string(tFeats.Table[idxFrame][idxFeat].prev[0].idx) ;
+            putText(Info0,info0,Point(50,300),0,.7,Scalar(255,255,128));
+
             if (idxFrame < N-2)
             {
-               k = tObjs.Table[idxFrame][idxObj].next;
+               k = tFeats.Table[idxFrame][idxFeat].next[0].idx;
                if (k >= 0)
                {
-                  Point P1((int)rint(tObjs.Table[idxFrame+1][k].mc.x),(int)rint(tObjs.Table[idxFrame+1][k].mc.y)); 
+                  Point P1((int)rint(tFeats.Table[idxFrame+1][k].mc.x),(int)rint(tFeats.Table[idxFrame+1][k].mc.y)); 
                   circle(Img1, P1, 5, Scalar(196,255,128), 3);
                   oneVector.clear();
-                  oneVector.push_back(tObjs.Table[idxFrame+1][k].objContour);
+                  oneVector.push_back(tFeats.Table[idxFrame+1][k].objContour);
                   drawContours (Img1, oneVector, -1, Scalar (255, 0, 0));
                   double humNorm2 = 0;
             for(int i = 0; i<7 ; i++){
-               humNorm2 += tObjs.Table[idxFrame+1][k].momentsHu.mH[i]*tObjs.Table[idxFrame+1][k].momentsHu.mH[i];
+               humNorm2 += tFeats.Table[idxFrame+1][k].momentsHu.mH[i]*tFeats.Table[idxFrame+1][k].momentsHu.mH[i];
             }
-                  info1 = "Objeto "+ to_string(tObjs.Table[idxFrame+1][k].idxObj)+ ", Frame = "+to_string(tObjs.Table[idxFrame+1][k].idxFrame);  
+                  info1 = "Objeto "+ to_string(tFeats.Table[idxFrame+1][k].idxFeat)+ ", Frame = "+to_string(tFeats.Table[idxFrame+1][k].idxFrame);  
                   putText(Info1,info1,Point(50,50),0,.7,Scalar(255,255,128));
-                  info1 ="MC = [" +to_string(tObjs.Table[idxFrame+1][k].mc.x) +","+to_string(tObjs.Table[idxFrame+1][k].mc.y)+"]";  
+                  info1 ="MC = [" +to_string(tFeats.Table[idxFrame+1][k].mc.x) +","+to_string(tFeats.Table[idxFrame+1][k].mc.y)+"]";  
                   putText(Info1,info1,Point(50,100),0,.7,Scalar(255,255,128));
                   info1 ="Momentos de Hu Normalizados = "+ to_string(sqrt(humNorm2));  
                   putText(Info1,info1,Point(50,150),0,.7,Scalar(255,255,128));
-                  info1 ="Area = " + to_string(tObjs.Table[idxFrame+1][k].area);  
+                  info1 ="Area = " + to_string(tFeats.Table[idxFrame+1][k].area);  
                   putText(Info1,info1,Point(50,200),0,.7,Scalar(255,255,128));
-                  info1 ="Perimetro = "+to_string(tObjs.Table[idxFrame+1][k].perimetro);  
+                  info1 ="Perimetro = "+to_string(tFeats.Table[idxFrame+1][k].perimetro);  
                   putText(Info1,info1,Point(50,250),0,.7,Scalar(255,255,128));
+                  info1 = "Next, Prev = " + to_string(tFeats.Table[idxFrame+1][k].next[0].idx) + ", " +  to_string(tFeats.Table[idxFrame+1][k].prev[0].idx) ;
+                  putText(Info1,info1,Point(50,300),0,.7,Scalar(255,255,128));
 
 
 
@@ -323,7 +456,8 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
 
 
 
-
+      circle (Img0, Point((int)pf.x, (int)pf.y), 5, Scalar (0, 0, 255), FILLED, LINE_8);
+      circle (Img1, Point((int)pf.x, (int)pf.y), 5, Scalar (0, 0, 255), FILLED, LINE_8);
       M.setFigure(Img0, 0, 0);
       M.setFigure(Img1, 0, 1);
       M.setFigure(Info0,1,0);
@@ -341,25 +475,25 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
             if (idxFrame > 0)
             {
                idxFrame = idxFrame - 1;
-               idxObj = oIndexes[idxFrame];
+               idxFeat = oIndexes[idxFrame];
             }
             break;
          case 's'://Avanza el frame
             if (idxFrame < N-2)
             {
-               oIndexes[idxFrame] = idxObj; //Almacenamos el indice del objeto en el frame idxFrame
-               k = tObjs.Table[idxFrame][idxObj].next; //k es ahora hacia donde nos vamos a mover.
-               if (k != -1 && tObjs.Table[idxFrame+1][k].status == DEFINED)
-                  idxObj = k;
+               oIndexes[idxFrame] = idxFeat; //Almacenamos el indice del objeto en el frame idxFrame
+               k = tFeats.Table[idxFrame][idxFeat].next[0].idx; //k es ahora hacia donde nos vamos a mover.
+               if (k != -1 && tFeats.Table[idxFrame+1][k].status == DEFINED)
+                  idxFeat = k;
                else
                {
                   unsigned int l;
 
-                  for (l=0;l<tObjs.maxElements;++l)
-                     if (tObjs.Table[idxFrame+1][l].status == DEFINED)
+                  for (l=0;l<tFeats.maxElements;++l)
+                     if (tFeats.Table[idxFrame+1][l].status == DEFINED)
                         break;
-                  if (l < tObjs.maxElements)
-                     idxObj = l;
+                  if (l < tFeats.maxElements)
+                     idxFeat = l;
                   else
                      l = 0;
 
@@ -368,29 +502,29 @@ void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData 
             }
                break;
             case 'a'://Retrocede el objeto
-               if (idxObj >= 0)
+               if (idxFeat >= 0)
                {
-                  oIndexes[idxFrame] = idxObj;
-                  for (k = idxObj - 1; k >= 0 && tObjs.Table[idxFrame][k].status != DEFINED;--k);
+                  oIndexes[idxFrame] = idxFeat;
+                  for (k = idxFeat - 1; k >= 0 && tFeats.Table[idxFrame][k].status != DEFINED;--k);
                   if (k != -1)
-                     idxObj = k;
+                     idxFeat = k;
                   else
                   {
-                     for (k = tObjs.maxElements - 1; k > idxObj && tObjs.Table[idxFrame][k].status != DEFINED;--k);
-                     idxObj = k;
+                     for (k = tFeats.maxElements - 1; k > idxFeat && tFeats.Table[idxFrame][k].status != DEFINED;--k);
+                     idxFeat = k;
                   }
                }
                break;
             case 'd'://Avanza el objeto
-               if (idxObj != -1)
+               if (idxFeat != -1)
                {
-                  for (i = idxObj+1; i < tObjs.maxElements && tObjs.Table[idxFrame][i].status != DEFINED;++i);
-                  if (i != tObjs.maxElements)
-                     idxObj = i;
+                  for (i = idxFeat+1; i < tFeats.maxElements && tFeats.Table[idxFrame][i].status != DEFINED;++i);
+                  if (i != tFeats.maxElements)
+                     idxFeat = i;
                   else
                   {
-                     for (i = 0; i < (unsigned)idxObj && tObjs.Table[idxFrame][i].status != DEFINED;++i);
-                     idxObj = i;
+                     for (i = 0; i < (unsigned)idxFeat && tFeats.Table[idxFrame][i].status != DEFINED;++i);
+                     idxFeat = i;
                   }
                }
             break;
@@ -409,6 +543,7 @@ int main (int argc, char **argv)
    int t;
    int dilation_type = 2;
    int dilation_size = 1;
+   unsigned int maxObjs;
 
    double umbralDistance = 30.;
    double umbralHu = 500.;
@@ -438,12 +573,15 @@ int main (int argc, char **argv)
       cerr << "Faltan argumentos:\n\n\tUso:\n\t\t " << argv[0] <<
          "ListaArchivos" << "UmbralFrame" << endl << endl <<
          "\tListaArchivos -> Archivo de texto que contiene lista de archivos a procesar"
-         << "\tUmbralFrame -> cantidad de cuadros a validar." << endl;
+         << "\tUmbralFrame -> cantidad de cuadros a validar," << endl
+         << "\tMaxObjs -> Cantidad Máxima de Objetos a seguir." << endl;
+         exit(1);
    }
 
    dataFiles = String (argv[1]);
 
    int umbralFrame = atoi (argv[2]);
+   maxObjs = atoi(argv[3]);
 /*
    if (argc > 2)
    {
@@ -481,13 +619,15 @@ int main (int argc, char **argv)
    cerr << "Umbral Distancia: " << umbralDistance << endl;
    cerr << "Umbral Hu: " << umbralHu << endl;
 
-   temporalObjsMem < objDescriptor > tObjs (200, umbralFrame, 10,
+   tempFeatureTable < featDescriptor > tFeats (maxObjs, umbralFrame,\
                                             pow (umbralDistance, 2));
+   tableView tempTableView (tFeats, 15);
 
    infile.open (dataFiles);
 
 
    namedWindow ("contornos", 1);
+   namedWindow ("Table View", 1);
    //  if (Umbraliza)
    // namedWindow ("Umbralizada", 1);
 
@@ -505,7 +645,7 @@ int main (int argc, char **argv)
       frameData fD, fDo;
       vector < double >labels;
       istringstream iss (file);
-      vector < objDescriptor > objs;
+      vector < featDescriptor > objs;
 
       cerr << "file:\t" << file << endl;
 
@@ -560,52 +700,55 @@ int main (int argc, char **argv)
       }
       Frames.push_back (fD);
       imshow ("contornos", frameRGB);
-      waitKey (30);
-      
-      cout << "Frames[t].contours.size() = "
-           << Frames[t].contours.size() << endl; 
-      cout << "fD.contours.size() = "
-           << fD.contours.size() << endl<< endl; 
-
+   
       for (i = 0; i < Frames[t].contours.size (); ++i)
       {
-         objDescriptor ob (Frames[t], t, i);
+         featDescriptor ob (Frames[t], t, i);
          objs.push_back (ob);
       }
-      tObjs.addDescriptors (objs, t);
-  //    tObjs.printGrid ();
-      tObjs.incIdx ();
+      tFeats.addDescriptors (objs, t);
+      tempTableView.refresh(tFeats);
+      imshow("Table View", tempTableView.imgView);
+      waitKey (30);
+      tFeats.incIdx ();
       t++;
    }
+   tFeats.printGrid ();
+   tempTableView.drawSquare(10,15,true);
+   imshow("Table View", tempTableView.imgView);
+   waitKey (0);
+   tempTableView.drawSquare(10,15,false);
+   imshow("Table View", tempTableView.imgView);
+   waitKey (30);
 
-   cout << " tObjs.maxSeq: " << tObjs.maxSeq << endl;
-   cout << " tObjs.maxElements " << tObjs.maxElements << endl;
+   cout << " tFeats.maxSeq: " << tFeats.maxSeq << endl;
+   cout << " tFeats.maxElements " << tFeats.maxElements << endl;
    //Codigo Ajuste de puntos a una linea.
    vector < Mat > linesToFit;
 
-   getTracking (tObjs, umbralFrame, 5);
+   getTracking (tFeats, umbralFrame, 500);
 
-   //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
+   //for (j = 0; j < tFeats.maxElements; ++j)//Número de objetos
    realPoints << "RP = [";
    for (j = 0; j < 10; ++j)     //Número de objetos
    {
       vector < Mat > pointsToFit;
-      //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
+      //for (i=0;i<tFeats.maxSeq;++i)//Numero de frames
       for (i = 0; i < unsigned (umbralFrame); ++i) //Numero de frames
       {
 
-         //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
-         Mat pts = (Mat_ < double >(3, 1) << tObjs.Table[i][j].mc.x,
-                    tObjs.Table[i][j].mc.y, 1);
+         //fOut<<tFeats.Table[i][j].mc.x<<","<<tFeats.Table[i][j].mc.y<<endl;
+         Mat pts = (Mat_ < double >(3, 1) << tFeats.Table[i][j].mc.x,
+                    tFeats.Table[i][j].mc.y, 1);
          if (i < (unsigned (umbralFrame) - 1))
          {
-            realPoints << "[" << tObjs.Table[i][j].mc.
-               x << "," << tObjs.Table[i][j].mc.y << "," << "1],";
+            realPoints << "[" << tFeats.Table[i][j].mc.
+               x << "," << tFeats.Table[i][j].mc.y << "," << "1],";
          }
          else
          {
-            realPoints << "[" << tObjs.Table[i][j].mc.
-               x << "," << tObjs.Table[i][j].mc.y << "," << "1];";
+            realPoints << "[" << tFeats.Table[i][j].mc.
+               x << "," << tFeats.Table[i][j].mc.y << "," << "1];";
          }
          //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
          //cout<<pts<<endl;
@@ -627,15 +770,8 @@ int main (int argc, char **argv)
    cout << "Punto de Fuga en cordenadas de la imagen: (" << ptx << "," << pty
       << ")" << endl;
 
-   //Point2f pf = Point2f(ptx,pty);
-   Mat outImage;
-   cvtColor (Frames[0].Image, outImage, COLOR_GRAY2RGB);
-   namedWindow ("pf", 1);
-   circle (outImage, Point (ptx, pty), 5, Scalar (0, 0, 255), FILLED, LINE_8);
-   imshow ("pf", outImage);
-   waitKey (0);
-   destroyWindow ("pf");
-   trackerViewer(tObjs, Frames);
+   Point2f pf = Point2f(ptx,pty);
+   trackerViewer(tFeats, Frames, pf);
 
    infile.close ();
    fileOut.close ();
@@ -643,7 +779,7 @@ int main (int argc, char **argv)
    return 0;
 }
 
-float matchContours(objDescriptor &a, objDescriptor &b)
+float matchContours(featDescriptor &a, featDescriptor &b)
 {
    vector< Point >::iterator iteA, endA, iteB, endB;
    double dist, d, min;
@@ -668,24 +804,28 @@ float matchContours(objDescriptor &a, objDescriptor &b)
       dist += min;
    }
    dist /= a.objContour.size();
-   cout << "idxFrameA, idxFrameB, a.size(), b.size(), dist, distCM = {" 
-        << a.idxFrame << ", " << b.idxFrame << ", "
-        << a.objContour.size()  << ", " << b.objContour.size()  << ", "
-        << dist << ", " << sqrt(pow(a.mc.x-b.mc.x,2)+pow(a.mc.y-b.mc.y,2))
-        << "}" << endl;
+//   cout << "idxFrameA, idxFrameB, a.size(), b.size(), dist, distCM = {" 
+//        << a.idxFrame << ", " << b.idxFrame << ", "
+//        << a.objContour.size()  << ", " << b.objContour.size()  << ", "
+//        << dist << ", " << sqrt(pow(a.mc.x-b.mc.x,2)+pow(a.mc.y-b.mc.y,2))
+//        << "}" << endl;
    return dist;
 }
 
 
-void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
+void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                   int numObj)
 {
    ofstream tracking ("tracking.m");
    int k = 0, k_old;
    int l = 0, l_old;
    int n = 0;
-   vector < vector < Point2f > > cola (1000);
-   vector < vector < double > > match (1000);
+   int nObjs = tFeats.maxSeq * tFeats.maxElements;
+   vector < vector < Point2f > > cola (nObjs);
+   vector < vector < double > > match (nObjs);
+
+   umbralFrame = tFeats.maxSeq;
+   numObj = tFeats.maxElements;
    
    int flag[umbralFrame][numObj];
 
@@ -697,16 +837,20 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
    {
       for (int j = 0; j < umbralFrame; ++j)
       {
-         if (tObjs.Table[j][i].status == DEFINED && flag[j][i] != -1)
+         if (tFeats.Table[j][i].status == DEFINED && flag[j][i] != -1)
          {
             k_old = i;
             l_old = j;
-            k = tObjs.Table[j][i].next;
+            k = tFeats.Table[j][i].next[0].idx;
             l = j + 1;
-            while (k >=0 && tObjs.Table[l][k].status == DEFINED && l < umbralFrame)
+            cout << endl 
+                 << "Processing Cell (" << i << ", " << j << ")"
+                 << endl;
+            cout.flush();
+            while (k >=0 && tFeats.Table[l][k].status == DEFINED && l < umbralFrame)
             {
                //Calculamos el Rank Match
-               match[n].push_back(matchContours(tObjs.Table[l_old][k_old], tObjs.Table[l][k]));
+               match[n].push_back(matchContours(tFeats.Table[l_old][k_old], tFeats.Table[l][k]));
                //Metemos el elemento definido en el vector n de la cola.
                cola[n].push_back (Point2f (l, k));
                //Marcamos que el elemento k,l ya fue asociado.
@@ -716,7 +860,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                //Encontramos en el renglon siguiente el correspondiente.
                l_old = l;
                k_old = k;
-               k = tObjs.Table[l][k].next;
+               k = tFeats.Table[l][k].next[0].idx;
                l++;
             }
          }
@@ -741,13 +885,13 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          // j es el indice del renglon de la tabla
          r = cola[i][j].x;
          c = cola[i][j].y;
-         //cout << tObjs.Table[r][c].idxFrame << endl;
+         //cout << tFeats.Table[r][c].idxFrame << endl;
 
-         tracking << tObjs.Table[r][c].mc.x << ","
-                  << tObjs.Table[r][c].mc.y << ","
-                  << tObjs.Table[r][c].idxFrame << ","
+         tracking << tFeats.Table[r][c].mc.x << ","
+                  << tFeats.Table[r][c].mc.y << ","
+                  << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
-                  << tObjs.Table[r][c].objContour.size() << "; "
+                  << tFeats.Table[r][c].objContour.size() << "; "
                   << endl;
          
       }
@@ -770,19 +914,19 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
 //    vector<Point2f> objeto;
 //    unsigned int i, j=0;
 //    vector < vector<Point2f> > tracking;
-//    //int checker[tObjs.maxElements][tObjs.maxSeq];
-//    Mat checker = Mat::ones(tObjs.maxSeq,tObjs.maxElements,CV_8U);
+//    //int checker[tFeats.maxElements][tFeats.maxSeq];
+//    Mat checker = Mat::ones(tFeats.maxSeq,tFeats.maxElements,CV_8U);
 //    //Table[i][j].status
-//    for (i=0;i<tObjs.maxElements;++i)
+//    for (i=0;i<tFeats.maxElements;++i)
 //    {
 //       cout<<"iteracion i "<<i<<endl;
 //          if(checker.at<uchar>(i,j)!=0)
 //          {  
-//             while(j<tObjs.maxSeq)
+//             while(j<tFeats.maxSeq)
 //             {
-//                if(tObjs.Table[j][i].status!=MISSING)
+//                if(tFeats.Table[j][i].status!=MISSING)
 //                {
-//                   objeto.push_back(Point2f(tObjs.Table[j][i].mc.x,tObjs.Table[j][i].mc.y));
+//                   objeto.push_back(Point2f(tFeats.Table[j][i].mc.x,tFeats.Table[j][i].mc.y));
 //                }else{
 //                   //cout<<objeto<<endl;
 //                   registro.push_back(t);
