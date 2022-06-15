@@ -579,7 +579,7 @@ int main (int argc, char **argv)
 
    double umbralDistance = 20.;
    double umbralHu = 500.;
-   double umbralArea = 50.;
+   double umbralArea = 10.;
    vector < frameData > Frames;
    unsigned int i, j;
 
@@ -652,7 +652,7 @@ int main (int argc, char **argv)
    cerr << "Umbral Hu: " << umbralHu << endl;
 
    tempFeatureTable < featDescriptor > tFeats (maxObjs, umbralFrame, umbralDistance);
-   tableView tempTableView (tFeats, 15);
+   tableView tempTableView (tFeats, 5);
 
    infile.open (dataFiles);
 
