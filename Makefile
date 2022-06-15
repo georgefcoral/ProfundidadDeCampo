@@ -10,7 +10,7 @@ ejecutableFocusingMeasures: FocusingMeasures.cpp
 ejecutableFocusingMeasures2: FocusingMeasures2.cpp
 	g++ $(CXXFLAGS) `pkg-config --cflags opencv4` -o ejecutableFocusingMeasures2 -lfftw3 FocusingMeasures2.cpp  `pkg-config --libs opencv4` -lm -lfftw3 
 
-PuntoDeFuga2: objs/PuntoDeFuga2.o objs/deepFunctions2.o objs/sortContours.o
+PuntoDeFuga2: objs/PuntoDeFuga2.o objs/deepFunctions2.o objs/sortContours.o 
 	g++ $(CXXFLAGS) -o PuntoDeFuga2 objs/PuntoDeFuga2.o objs/deepFunctions2.o objs/sortContours.o `pkg-config opencv4 --libs`
 
 testSortContours: objs/testSortContours.o objs/sortContours.o
@@ -22,7 +22,7 @@ testMomentsMetricA: objs/testMomentsMetricA.o objs/sortContours.o
 testMomentsMetricB: objs/testMomentsMetricB.o objs/sortContours.o
 	g++ $(CXXFLAGS) -o testMomentsMetricB objs/testMomentsMetricB.o objs/sortContours.o `pkg-config opencv4 --libs`
 
-objs/PuntoDeFuga2.o: PuntoDeFuga2.cpp 
+objs/PuntoDeFuga2.o: PuntoDeFuga2.cpp include/FeatureTracker.h include/Mosaic.h
 	g++ $(CXXFLAGS) -o objs/PuntoDeFuga2.o -c PuntoDeFuga2.cpp  `pkg-config opencv4 --cflags`
 
 objs/testSortContours.o: testSortContours.cpp 
