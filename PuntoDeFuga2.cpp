@@ -171,7 +171,7 @@ struct objDescriptor:public trackedObj
 };
 
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
-                  int numObj);
+                  int numObj,vector<vector<Point2f>> &seg);
 
 void trackerViewer(temporalObjsMem < objDescriptor > &tObjs, vector < frameData > Frames)
 {
@@ -581,32 +581,37 @@ int main (int argc, char **argv)
    cout << " tObjs.maxSeq: " << tObjs.maxSeq << endl;
    cout << " tObjs.maxElements " << tObjs.maxElements << endl;
    //Codigo Ajuste de puntos a una linea.
+
+
    vector < Mat > linesToFit;
+   vector < vector < Point2f > > tracking;
 
-   getTracking (tObjs, umbralFrame, 5);
+   getTracking (tObjs, umbralFrame, 5,tracking);
 
+   
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
    realPoints << "RP = [";
-   for (j = 0; j < 10; ++j)     //Número de objetos
+   for (j = 0; j < tracking.size(); ++j)     //Número de objetos
    {
       vector < Mat > pointsToFit;
       //for (i=0;i<tObjs.maxSeq;++i)//Numero de frames
-      for (i = 0; i < unsigned (umbralFrame); ++i) //Numero de frames
+      for (i = 0; i < tracking[j].size(); ++i) //Numero de frames
       {
 
          //fOut<<tObjs.Table[i][j].mc.x<<","<<tObjs.Table[i][j].mc.y<<endl;
-         Mat pts = (Mat_ < double >(3, 1) << tObjs.Table[i][j].mc.x,
-                    tObjs.Table[i][j].mc.y, 1);
-         if (i < (unsigned (umbralFrame) - 1))
-         {
-            realPoints << "[" << tObjs.Table[i][j].mc.
-               x << "," << tObjs.Table[i][j].mc.y << "," << "1],";
-         }
-         else
-         {
-            realPoints << "[" << tObjs.Table[i][j].mc.
-               x << "," << tObjs.Table[i][j].mc.y << "," << "1];";
-         }
+         Mat pts = (Mat_ < double >(3, 1) << tracking[j][i].x,
+                    tracking[j][i].y, 1);
+         cout<<"Frame"<<i<<": "<<pts<<endl;
+         // if (i < (unsigned (umbralFrame) - 1))
+         // {
+         //    realPoints << "[" << tObjs.Table[i][j].mc.
+         //       x << "," << tObjs.Table[i][j].mc.y << "," << "1],";
+         // }
+         // else
+         // {
+         //    realPoints << "[" << tObjs.Table[i][j].mc.
+         //       x << "," << tObjs.Table[i][j].mc.y << "," << "1];";
+         // }
          //Mat pts = (Mat_ <double> (3,1)<< xs[j],ys[j],1);
          //cout<<pts<<endl;
          pointsToFit.push_back (pts);
@@ -619,7 +624,7 @@ int main (int argc, char **argv)
       //cout << "L[" << j << "] = " << L.t() << endl; 
    }
    realPoints << "]";
-   Mat puntoDeFuga = fitLine (linesToFit, 0.0003);
+   Mat puntoDeFuga = fitLine (linesToFit, 0.003);
    cout << "Punto de Fuga = " << puntoDeFuga << endl;
    int ptx, pty;
    ptx = puntoDeFuga.at < double >(0, 0) / puntoDeFuga.at < double >(0, 2);
@@ -678,7 +683,7 @@ float matchContours(objDescriptor &a, objDescriptor &b)
 
 
 void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
-                  int numObj)
+                  int numObj,vector<vector<Point2f>> &seg)
 {
    ofstream tracking ("tracking.m");
    int k = 0, k_old;
@@ -707,22 +712,26 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
             {
                //Calculamos el Rank Match
                match[n].push_back(matchContours(tObjs.Table[l_old][k_old], tObjs.Table[l][k]));
+
                //Metemos el elemento definido en el vector n de la cola.
                cola[n].push_back (Point2f (l, k));
                //Marcamos que el elemento k,l ya fue asociado.
                flag[l][k] = -1;
-
-
                //Encontramos en el renglon siguiente el correspondiente.
                l_old = l;
                k_old = k;
                k = tObjs.Table[l][k].next;
                l++;
             }
+
+
+
          }
          n++;
       }
    }
+   
+   
 
    unsigned int idx = 0;
    for (unsigned int i = 0; i < cola.size(); ++i)
@@ -732,9 +741,11 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
       //cout << "Analizando objeto en la columna " << i << endl;
 
       tracking<<"Obj"+to_string(idx++)+"=[";
+      vector < Point2f > locations(cola[i].size ());
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
 
+         
          int r, c;
 
          // i es el indice de la columna de la tabla.
@@ -742,6 +753,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          r = cola[i][j].x;
          c = cola[i][j].y;
          //cout << tObjs.Table[r][c].idxFrame << endl;
+         locations[j]=Point2f(tObjs.Table[r][c].mc.x,tObjs.Table[r][c].mc.y);
 
          tracking << tObjs.Table[r][c].mc.x << ","
                   << tObjs.Table[r][c].mc.y << ","
@@ -751,6 +763,8 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
                   << endl;
          
       }
+
+      seg.push_back(locations);
       tracking << "];" << endl;
       
    }
