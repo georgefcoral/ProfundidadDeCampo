@@ -585,8 +585,8 @@ int main (int argc, char **argv)
 
    vector < Mat > linesToFit;
    vector < vector < Point2f > > tracking;
-
-   getTracking (tObjs, umbralFrame, 5,tracking);
+   cout<<"Realizando seguimiento de objetos"<<endl;
+   getTracking (tObjs, umbralFrame, 50,tracking);
 
    
    //for (j = 0; j < tObjs.maxElements; ++j)//Número de objetos
@@ -689,8 +689,8 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
    int k = 0, k_old;
    int l = 0, l_old;
    int n = 0;
-   vector < vector < Point2f > > cola (1000);
-   vector < vector < double > > match (1000);
+   vector < vector < Point2f > > cola (100000);
+   vector < vector < double > > match (100000);
    
    int flag[umbralFrame][numObj];
 
@@ -731,7 +731,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
       }
    }
    
-   
+   cout<<"Imprimir seguimiento: "<<endl;
 
    unsigned int idx = 0;
    for (unsigned int i = 0; i < cola.size(); ++i)
@@ -758,7 +758,7 @@ void getTracking (temporalObjsMem < objDescriptor > &tObjs, int umbralFrame,
          tracking << tObjs.Table[r][c].mc.x << ","
                   << tObjs.Table[r][c].mc.y << ","
                   << tObjs.Table[r][c].idxFrame << ","
-                  << match[i][j] << ","
+              //    << match[i][j] << ","
                   << tObjs.Table[r][c].objContour.size() << "; "
                   << endl;
          
