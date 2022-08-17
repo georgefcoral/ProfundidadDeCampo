@@ -18,6 +18,20 @@ stepping = 100;
 
 shift = stepping * oneRev;% Desplazamiento de la cámara a través de la riel.
 
+%Seguimiento de los objetos en el plano de imagen
+
+tracking
+
+puntoDeFugaH
+
+%Matriz de calibración K 
+
+K = [[1743,0,354];[0,1743,233];[0,0,1]]
+
+pFW = K^-1 * pF
+
+
+
 
 
 
