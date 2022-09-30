@@ -14,8 +14,7 @@ function [] = plotSegments(M, pF, thr)
          end
       end
       idxs = find(crib);
-      plot(M{i}(idxs,1), M{i}(idxs,2));
-      pause
+      plot(M{i}(idxs,1), M{i}(idxs,2),'*');
    end
    axis equal;
    hold off
