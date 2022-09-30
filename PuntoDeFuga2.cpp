@@ -758,7 +758,7 @@ int main (int argc, char **argv)
    vector < Mat > linesToFit;
    vector < vector < Point2f > > tracking;
 
-   getTracking (tFeats, umbralFrame, 100,tracking);
+   getTracking (tFeats, umbralFrame, maxObjs,tracking);
 
    //for (j = 0; j < tFeats.maxElements; ++j)//Número de objetos
    realPoints << "RP = [";
@@ -862,8 +862,8 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
    umbralFrame = tFeats.maxSeq;
    numObj = tFeats.maxElements;
    
-   int flag[umbralFrame][numObj];
-
+   //int flag[numObj][umbralFrame];//Mod
+   int flag[umbralFrame][numObj];//NoMod
    //Inicializamos el arreglo flag
    for (int i = 0; i < umbralFrame; ++i)
       memset (flag[i], 0, numObj * sizeof(int));
@@ -873,6 +873,7 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
       for (int j = 0; j < umbralFrame; ++j)
       {
          if (tFeats.Table[j][i].status == DEFINED && flag[j][i] != -1)
+         //if (tFeats.Table[j][i].status == DEFINED)                                         
          {
             k_old = i;
             l_old = j;
@@ -934,7 +935,7 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                   << tFeats.Table[r][c].mc.y << ","
                   << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
-                  << tFeats.Table[r][c].objContour.size() << "; "
+                  << tFeats.Table[r][c].idxFeat << "; "
                   << endl;
          
       }
