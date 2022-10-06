@@ -297,7 +297,7 @@ struct tableView
 
 
 void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
-                  int numObj);
+                  int numObj,vector<vector<Point2f>> &seg);
 
 void trackerViewer(tempFeatureTable < featDescriptor > &tFeats, vector < frameData > Frames, Point2f &pf)
 {
@@ -756,21 +756,22 @@ int main (int argc, char **argv)
    cout << " tFeats.maxElements " << tFeats.maxElements << endl;
    //Codigo Ajuste de puntos a una linea.
    vector < Mat > linesToFit;
+   vector < vector < Point2f > > tracking;
 
-   //getTracking (tFeats, umbralFrame, 500);
+   getTracking (tFeats, umbralFrame, maxObjs,tracking);
 
    //for (j = 0; j < tFeats.maxElements; ++j)//Número de objetos
    realPoints << "RP = [";
-   for (j = 0; j < 10; ++j)     //Número de objetos
+   for (j = 0; j < tracking.size(); ++j)     //Número de objetos
    {
       vector < Mat > pointsToFit;
       //for (i=0;i<tFeats.maxSeq;++i)//Numero de frames
-      for (i = 0; i < unsigned (umbralFrame); ++i) //Numero de frames
+      for (i = 0; i < tracking[j].size(); ++i) //Numero de frames
       {
 
          //fOut<<tFeats.Table[i][j].mc.x<<","<<tFeats.Table[i][j].mc.y<<endl;
-         Mat pts = (Mat_ < double >(3, 1) << tFeats.Table[i][j].mc.x,
-                    tFeats.Table[i][j].mc.y, 1);
+         Mat pts = (Mat_ < double >(3, 1) << tracking[j][i].x,
+                           tracking[j][i].y, 1);
          if (i < (unsigned (umbralFrame) - 1))
          {
             realPoints << "[" << tFeats.Table[i][j].mc.
@@ -787,14 +788,16 @@ int main (int argc, char **argv)
       }
       realPoints << endl;
 
-      Mat L = fitLine (pointsToFit, 0.0003).t ();
+      Mat L = fitLine (pointsToFit, 0.003).t ();
 
       linesToFit.push_back (L);
       //cout << "L[" << j << "] = " << L.t() << endl; 
    }
    realPoints << "]";
    Mat puntoDeFuga = fitLine (linesToFit, 0.0003);
+   ofstream pF ("puntoDeFugaH.m");
    cout << "Punto de Fuga = " << puntoDeFuga << endl;
+   pF<<"pF = ["<<puntoDeFuga.at < double >(0, 0)<<";"<<puntoDeFuga.at < double >(0, 1)<<";"<<puntoDeFuga.at < double >(0, 2)<<"]"<<endl;
    int ptx, pty;
    ptx = puntoDeFuga.at < double >(0, 0) / puntoDeFuga.at < double >(0, 2);
    pty = puntoDeFuga.at < double >(0, 1) / puntoDeFuga.at < double >(0, 2);
@@ -807,6 +810,7 @@ int main (int argc, char **argv)
    infile.close ();
    fileOut.close ();
    realPoints.close ();
+   pF.close();
    return 0;
 }
 
@@ -845,7 +849,7 @@ float matchContours(featDescriptor &a, featDescriptor &b)
 
 
 void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
-                  int numObj)
+                  int numObj,vector<vector<Point2f>> &seg)
 {
    ofstream tracking ("tracking.m");
    int k = 0, k_old;
@@ -858,8 +862,8 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
    umbralFrame = tFeats.maxSeq;
    numObj = tFeats.maxElements;
    
-   int flag[umbralFrame][numObj];
-
+   //int flag[numObj][umbralFrame];//Mod
+   int flag[umbralFrame][numObj];//NoMod
    //Inicializamos el arreglo flag
    for (int i = 0; i < umbralFrame; ++i)
       memset (flag[i], 0, numObj * sizeof(int));
@@ -869,6 +873,7 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
       for (int j = 0; j < umbralFrame; ++j)
       {
          if (tFeats.Table[j][i].status == DEFINED && flag[j][i] != -1)
+         //if (tFeats.Table[j][i].status == DEFINED)                                         
          {
             k_old = i;
             l_old = j;
@@ -904,15 +909,17 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          n++;
       }
    }
+   tracking << "M = cell("<<numObj<<",1);"<<endl;
+   unsigned int idx = 1;
 
-   unsigned int idx = 0;
    for (unsigned int i = 0; i < cola.size(); ++i)
    {
       if(cola[i].size () < 4)
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
 
-      tracking<<"Obj"+to_string(idx++)+"=[";
+      tracking<<"Obj"+to_string(idx)+"=[";
+      vector < Point2f > locations(cola[i].size ());
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
 
@@ -923,17 +930,19 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          r = cola[i][j].x;
          c = cola[i][j].y;
          //cout << tFeats.Table[r][c].idxFrame << endl;
-
+         locations[j]=Point2f(tFeats.Table[r][c].mc.x,tFeats.Table[r][c].mc.y);
          tracking << tFeats.Table[r][c].mc.x << ","
                   << tFeats.Table[r][c].mc.y << ","
                   << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
-                  << tFeats.Table[r][c].objContour.size() << "; "
+                  << tFeats.Table[r][c].idxFeat << "; "
                   << endl;
          
       }
+      seg.push_back(locations);
       tracking << "];" << endl;
-      
+      tracking<<"M("<<idx<<")"<<"= Obj"+to_string(idx)+";"<<endl;
+      idx++;
    }
    tracking.close();
 }
