@@ -894,8 +894,6 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                cola[n].push_back (Point2f (l, k));
                //Marcamos que el elemento k,l ya fue asociado.
                flag[l][k] = -1;
-
-
                //Encontramos en el renglon siguiente el correspondiente.
                l_old = l;
                k_old = k;
@@ -935,7 +933,11 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                   << tFeats.Table[r][c].mc.y << ","
                   << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
-                  << tFeats.Table[r][c].idxFeat << "; "
+                  << tFeats.Table[r][c].idxFeat << ", "
+                  << 0<< ", "
+                  << 0<< ", "
+                  << 0<< ", "
+                  << 0<< "; "
                   << endl;
          
       }
