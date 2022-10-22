@@ -875,8 +875,16 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          if (tFeats.Table[j][i].status == DEFINED && flag[j][i] != -1)
          //if (tFeats.Table[j][i].status == DEFINED)                                         
          {
+            //Calculamos el Rank Match
+            match[n].push_back(matchContours(tFeats.Table[j][i], tFeats.Table[j][i]));
+            //Metemos el elemento definido en el vector n de la cola.
+            cola[n].push_back (Point2f (j, i));
+            //Marcamos que el elemento k,l ya fue asociado.
+            flag[j][i] = -1;
+
             k_old = i;
             l_old = j;
+
             if (tFeats.Table[j][i].next.size())
                k = tFeats.Table[j][i].next[0].idx;
             else
@@ -916,7 +924,7 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          continue;
       //cout << "Analizando objeto en la columna " << i << endl;
 
-      tracking<<"Obj"+to_string(idx)+"=[";
+      tracking<<"Obj=[";
       vector < Point2f > locations(cola[i].size ());
       for (unsigned int j = 0; j < cola[i].size (); j++)
       {
@@ -927,6 +935,8 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
          // j es el indice del renglon de la tabla
          r = cola[i][j].x;
          c = cola[i][j].y;
+         cout << "(" << i << ", " << j << ", "
+              << r << ", " << c << ")" << endl;
          //cout << tFeats.Table[r][c].idxFrame << endl;
          locations[j]=Point2f(tFeats.Table[r][c].mc.x,tFeats.Table[r][c].mc.y);
          tracking << tFeats.Table[r][c].mc.x << ","
@@ -934,27 +944,22 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
                   << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
                   << tFeats.Table[r][c].idxFeat << ", "
-                  << 0<< ", "
-                  << 0<< ", "
-                  << 0<< ", "
-                  << 0<< "; "
+                  << tFeats.Table[r][c].area<< ", "
+                  << 0 << ", "
+                  << 0 << ", "
+                  << 0 << ", "
+                  << 0 << "; "
                   << endl;
          
       }
       seg.push_back(locations);
       tracking << "];" << endl;
-      tracking<<"M("<<idx<<")"<<"= Obj"+to_string(idx)+";"<<endl;
+      tracking << "M("<< idx << ") = Obj;" << endl;
       idx++;
    }
+   tracking << "clear Obj;" << endl;
    tracking.close();
 }
-
-
-
-
-
-
-
 
 
 //  int t = 0;

@@ -1,4 +1,4 @@
-function [sol, Idx]=ransac1(X, Y, sigma2, pri)
+function [sol, Idx, err]=ransac1(X, Y, sigma2, pri)
 
 
 % Here we found the number of samples needed in order to ensure that the
@@ -86,3 +86,19 @@ for j=1:length(Idx)
 	B(j,1)=Y(Idx(j));
 end;
 sol=A\B;
+
+%Compute error
+m=sol(1);
+b=sol(2);
+Dists=zeros(length(Idx),1);
+for j=1:length(Idx)
+   x0=X(Idx(j));
+	y0=Y(Idx(j));
+		
+	% The minimum distance found by solving for x in the derivative of the error 
+	% function(x0-x).^2+(y0-(mx+b)).
+	x1=(x0-m*(b-y0))/(1+m.^2);
+	y1=[x1, 1]*sol;
+	Dists(j)=(x1-x0).^2+(y1-y0).^2;
+end
+err = mean(Dists);

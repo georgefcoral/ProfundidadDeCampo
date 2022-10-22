@@ -1,4 +1,4 @@
-function [N] = cleanUp(M)
+function [N] = cleanUp(M, fg)
    % Cuenta cuantos objetos y cuantas coordenadas hay.
    nObjects = length(M);
    nCoors = 0;
@@ -21,7 +21,7 @@ function [N] = cleanUp(M)
    for i = 1:nObjects
       [r, c] = size(M{i});
       %Aplicamos Ransac a las coordenadas del objeto.
-      [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.2, .6);
+      [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.5, .6);
       M{i}(idx, 7) = 1;
       for j = 1:r
          Objs(row, 1) = i;
@@ -83,6 +83,11 @@ for i = 1:length(repeated)
    end
 end
 
+if length(idxM) < 1
+   N = M;
+   return;
+end
+
 idxM=sort(idxM);
 Q=[idxM(1)];
 for i=2:length(idxM)
@@ -92,17 +97,17 @@ for i=2:length(idxM)
 end
 idxM=Q;
 
-N={}
+nObjects = length(idxM);
+N={};
 for i = 1:nObjects
    idxF = find (Objs(:,1) == idxM(i));% & Objs(:,8) == 1);
    N{i}=Objs(idxF,2:end);
 end
 
-figure(1);
+figure(fg);
 clf;
 axis equal;
 hold on;
-nObjects = length(idxM);
 for i = 1:nObjects
    idx = find (Objs(:,1) == idxM(i));
    idxF = find (Objs(:,1) == idxM(i) & Objs(:,8) == 1);
