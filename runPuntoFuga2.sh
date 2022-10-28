@@ -23,5 +23,5 @@ make
 
 ./PuntoDeFuga2 $1 $2 $3
 
-cp tracking.m Reconstrucción/
-cp puntoDeFugaH.m Reconstrucción/
+cp tracking.m pTracking/
+cp puntoDeFugaH.m pTracking/

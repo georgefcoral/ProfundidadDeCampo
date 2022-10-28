@@ -9,7 +9,7 @@ function [N] = cleanUp(M, fg)
 
    % Crea una matriz para almacenar todas las coordenadas de todos
    % los objetos.
-   Objs=zeros(nCoors, c+1);
+   Objs=zeros(nCoors, c+3);
 
    % Vuelca las coordeandas en M en la matriz objs
    % La primera columna de Objs corresponde al indice del objeto.
@@ -22,12 +22,14 @@ function [N] = cleanUp(M, fg)
       [r, c] = size(M{i});
       %Aplicamos Ransac a las coordenadas del objeto.
       [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.5, .6);
-      M{i}(idx, 7) = 1;
+      M{i}(idx, 7) = 1; %Marcamos como 1 a los inliers
       for j = 1:r
          Objs(row, 1) = i;
          Objs(row, 2:c+1) = M{i}(j, :);
          Objs(row, 9:10) = sol;
          Objs(row,11) = err;
+         %Proyectar la coordenada en la linea estimada (sol)
+         %Almacenarla en las columnas 12 y 13
          row += 1;
       end
    end

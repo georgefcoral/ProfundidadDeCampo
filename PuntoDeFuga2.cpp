@@ -803,7 +803,7 @@ int main (int argc, char **argv)
    pty = puntoDeFuga.at < double >(0, 1) / puntoDeFuga.at < double >(0, 2);
    cout << "Punto de Fuga en cordenadas de la imagen: (" << ptx << "," << pty
       << ")" << endl;
-
+   pF<<"pFPix = ["<<ptx<<";"<<pty<<";"<<1<<"]"<<endl;
    Point2f pf = Point2f(ptx,pty);
    trackerViewer(tFeats, Frames, pf);
 
