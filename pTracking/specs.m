@@ -61,8 +61,8 @@ iK = inv(K);
 %%Creamos una celda para almacenar resultados.
 R={};
 for i = 1:l
-   [r,c] = size(N0{i});
-   R{i}=zeros(r,5);
+   [r,c] = size(N0{i})
+   R{i}=zeros(r,7);
 end
 
 for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
@@ -70,19 +70,19 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
     
     s=size(N0{i});
     for j = 2 : s(1)  %Aquí recorremos la trayectoria por cada objeto.
+
           Tx = Tv(1)*shift*N0{i}(j,3)/1000;
           Ty = Tv(2)*shift*N0{i}(j,3)/1000;
           Tz = Tv(3)*shift*N0{i}(j,3)/1000;
-          %N0{i}(1,7) = Tz;
-          %N0{i}(1,5) = Tx;
-          %N0{i}(1,6) = Ty;
-          X_ = [N0{i}(j-1,1), N0{i}(j-1,2),1];%Aquí la j-esima coordenada del i-esimo objeto anterior.
-          X = [N0{i}(j,1), N0{i}(j,2),1];%Aquí la j-esima coordenada del i-esimo objeto.
+
+
+          X_ = [N0{i}(j-1,11), N0{i}(j-1,12),1];%Aquí la j-esima coordenada del i-esimo objeto anterior.
+          X = [N0{i}(j,11), N0{i}(j,12),1];%Aquí la j-esima coordenada del i-esimo objeto.
         
 
-         % Xw_ = Xw_ / Xw_(3);
-         % Xw = Xw / Xw(3);
-         if(X(2) - X_(2) != 0 & X(1) - X_(1) != 0)
+        % Xw_ = Xw_ / Xw_(3);
+        % Xw = Xw / Xw(3);
+        if(X(2) - X_(2) != 0 & X(1) - X_(1) != 0)
 
             deltaX = X(1) - X_(1);%u
             deltaY = X(2) - X_(2);%v
@@ -91,29 +91,37 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
             R{i}(j,2) =  ((Tz)*(X(2) - pFPix(2)))/ deltaY;   %Z;
             R{i}(j,3) = N0{i}(j,7); 
             R{i}(j,4) = N0{i}(j,10); 
-            %N0{i}(j,8) = N0{i}(j,5) + Tz;% Z component
-            %N0{i}(j,6) = Xw(1)*N0{i}(j,8) + Tx;
-            %N0{i}(j,7) = Xw(2)*N0{i}(j,8) + Ty;
+            R{i}(j,5) = R{i}(j,1) - Tz;% Z component
+
+            Xw  = iK * transpose(X);
+            R{i}(j,6) = Xw(1)*R{i}(j,1) - Tx;
+            R{i}(j,7) = Xw(2)*R{i}(j,1) - Ty;
           else
             display("Division por cero detectada.")
             N0{i}(j,4) = 0;
             N0{i}(j,7) = Tz;
           endif
+
     endfor
 endfor
 
 %Plotting objects on 3D coordinates:
 
-%figure(3);
-%indexObj = 400;
-%for i = 1:l
-%  XObj = N0{i}(:,5); 
-%  YObj = N0{i}(:,6); 
-%  ZObj = N0{i}(:,7); 
-%  display ([mean(XObj), mean(YObj), mean(ZObj)])
-%  plot3(XObj, YObj, ZObj,'r*')
-%  %plot3(mean(XObj), mean(YObj), mean(ZObj),'ro')
-%endfor
+figure(3);
+
+hold on
+for i = 1:l
+  s=size(R{i});
+  for j = 2:s
+    XObj = R{i}(j,6); 
+    YObj = R{i}(j,7); 
+    ZObj = R{i}(j,5); 
+  %display ([mean(XObj), mean(YObj), mean(ZObj)])
+    %plot3(XObj, YObj, ZObj,'r*')
+
+    plot3(mean(XObj), mean(YObj), mean(ZObj),'ro')
+  endfor
+endfor
 
 
 

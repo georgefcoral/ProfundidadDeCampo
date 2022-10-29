@@ -9,7 +9,7 @@ function [N] = cleanUp(M, fg)
 
    % Crea una matriz para almacenar todas las coordenadas de todos
    % los objetos.
-   Objs=zeros(nCoors, c+3);
+   Objs=zeros(nCoors, c+4);
 
    % Vuelca las coordeandas en M en la matriz objs
    % La primera columna de Objs corresponde al indice del objeto.
@@ -28,8 +28,21 @@ function [N] = cleanUp(M, fg)
          Objs(row, 2:c+1) = M{i}(j, :);
          Objs(row, 9:10) = sol;
          Objs(row,11) = err;
+
+         %Encontrar parámetros de la recta perpendicular a l,
+         m = sol(1);
+         b = sol(2);
+
+         mp = -1/m;
+         bp = -mp*M{i}(j,1)+M{i}(j,2);
+
          %Proyectar la coordenada en la linea estimada (sol)
+         xp = (bp - b)/(m - mp);
+         yp = (m)*xp + b;
          %Almacenarla en las columnas 12 y 13
+         Objs(row,12) = xp;
+         Objs(row,13) = yp;
+
          row += 1;
       end
    end
