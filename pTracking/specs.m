@@ -61,9 +61,13 @@ iK = inv(K);
 %%Creamos una celda para almacenar resultados.
 R={};
 for i = 1:l
-   [r,c] = size(N0{i})
+   [r,c] = size(N0{i});
    R{i}=zeros(r,7);
 end
+
+dTx = Tv(1)*shift/1000;
+dTy = Tv(2)*shift/1000;
+dTz = Tv(3)*shift/1000;%Incremento de Desplazamiento.
 
 for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
     N0{i}(1,4) = 0;
@@ -71,9 +75,11 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
     s=size(N0{i});
     for j = 2 : s(1)  %Aquí recorremos la trayectoria por cada objeto.
 
-          Tx = Tv(1)*shift*N0{i}(j,3)/1000;
-          Ty = Tv(2)*shift*N0{i}(j,3)/1000;
-          Tz = Tv(3)*shift*N0{i}(j,3)/1000;
+
+
+          Tx = dTx * N0{i}(j,3);
+          Ty = dTy * N0{i}(j,3);
+          Tz = dTz * N0{i}(j,3);%Desplazamiento absoluto con respecto al primer cuadro.
 
 
           X_ = [N0{i}(j-1,11), N0{i}(j-1,12),1];%Aquí la j-esima coordenada del i-esimo objeto anterior.
@@ -87,15 +93,15 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
             deltaX = X(1) - X_(1);%u
             deltaY = X(2) - X_(2);%v
 
-            R{i}(j,1) = ((Tz)*(X(1) - pFPix(1)))/ deltaX ;  %Z;
-            R{i}(j,2) =  ((Tz)*(X(2) - pFPix(2)))/ deltaY;   %Z;
+            R{i}(j,1) = ((dTz)*(X(1) - pFPix(1)))/ deltaX ;  %Z;
+            R{i}(j,2) =  ((dTz)*(X(2) - pFPix(2)))/ deltaY;   %Z;
             R{i}(j,3) = N0{i}(j,7); 
             R{i}(j,4) = N0{i}(j,10); 
-            R{i}(j,5) = R{i}(j,1) - Tz;% Z component
+            R{i}(j,5) = R{i}(j,1) + Tz;% Z component
 
             Xw  = iK * transpose(X);
-            R{i}(j,6) = Xw(1)*R{i}(j,1) - Tx;
-            R{i}(j,7) = Xw(2)*R{i}(j,1) - Ty;
+            R{i}(j,6) = Xw(1)*R{i}(j,1) + Tx;
+            R{i}(j,7) = Xw(2)*R{i}(j,1) + Ty ;
           else
             display("Division por cero detectada.")
             N0{i}(j,4) = 0;
@@ -108,20 +114,34 @@ endfor
 %Plotting objects on 3D coordinates:
 
 figure(3);
-
+clf
 hold on
-for i = 1:l
-  s=size(R{i});
-  for j = 2:s
-    XObj = R{i}(j,6); 
-    YObj = R{i}(j,7); 
-    ZObj = R{i}(j,5); 
-  %display ([mean(XObj), mean(YObj), mean(ZObj)])
-    %plot3(XObj, YObj, ZObj,'r*')
-
-    plot3(mean(XObj), mean(YObj), mean(ZObj),'ro')
-  endfor
+s1=length(R);
+for i = 1:s1% de objeto
+  Z = median(R{i}(2:end,5));
+  X = median(R{i}(2:end,6));
+  Y = median(R{i}(2:end,7));
+  plot3(X,Y,Z,'*k')
 endfor
+
+
+% figure(3);
+% clf
+% hold on
+% for i = 1:l% de objeto
+%   [s1,s2]=size(R{i});
+%   Z = zeros(s1,1);
+%   for j = 2:s1%indice por cada objeto
+%     XObj = R{i}(j,6); 
+%     YObj = R{i}(j,7); 
+%     ZObj = R{i}(j,5); 
+%     Z(j-1) = ZObj;
+%     %display ([mean(XObj), mean(YObj), mean(ZObj)])
+%     %plot3(XObj, YObj, ZObj,'r*')
+%   endfor
+%   plot(i,median(Z),'b*')
+%   pause()
+% endfor
 
 
 

@@ -18,14 +18,18 @@ function [N] = cleanUp(M, fg)
    % los parámetros de la linea, así como el error de cada punto
    % con respecto a la linea ajustada.
    row = 1;
+   newM = {}
+   acumIdx = 0;
    for i = 1:nObjects
       [r, c] = size(M{i});
       %Aplicamos Ransac a las coordenadas del objeto.
       [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.5, .6);
       M{i}(idx, 7) = 1; %Marcamos como 1 a los inliers
-      for j = 1:r
+      newM{i} = M{i}(idx,:);
+      acumIdx = acumIdx + length(idx);
+      for j = 1:length(idx)
          Objs(row, 1) = i;
-         Objs(row, 2:c+1) = M{i}(j, :);
+         Objs(row, 2:c+1) = newM{i}(j, :);
          Objs(row, 9:10) = sol;
          Objs(row,11) = err;
 
@@ -34,7 +38,7 @@ function [N] = cleanUp(M, fg)
          b = sol(2);
 
          mp = -1/m;
-         bp = -mp*M{i}(j,1)+M{i}(j,2);
+         bp = -mp*newM{i}(j,1)+newM{i}(j,2);
 
          %Proyectar la coordenada en la linea estimada (sol)
          xp = (bp - b)/(m - mp);
@@ -46,6 +50,12 @@ function [N] = cleanUp(M, fg)
          row += 1;
       end
    end
+
+%drop outliers allocation memory
+
+
+ 
+
 
 %Busca Coordenadas repetidas
 repeated = cell;
