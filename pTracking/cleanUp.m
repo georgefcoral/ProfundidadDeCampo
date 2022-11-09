@@ -20,11 +20,26 @@ function [N] = cleanUp(M, fg)
    row = 1;
    newM = {}
    acumIdx = 0;
+
+   % Aqui se reubican los indices de cada rasgo seguido. Despues de este
+   % ciclo for, cada elemento de la celda M queda como sigue:
+   % campo 1: indice del rasgo
+   % campo 2 y 3: Centro de Masa
+   % campo 4: Indice de Frame
+   % campo 5: confianza en el match
+   % campo 6: índice del rasgo (feature)
+   % campo 7: area del rasgo.
+   % campo 8: Inlier (1), o Outlier(0):
+   % campo 9 y 10: Parametrós de la linea que pasa por el rasgo.
+   % campo 11: error.
+   % campo 12 y 13: proyección del centro de masa en la linea a
+   %                la que pertenece.
+   %
    for i = 1:nObjects
       [r, c] = size(M{i});
       %Aplicamos Ransac a las coordenadas del objeto.
       [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.5, .6);
-      M{i}(idx, 7) = 1; %Marcamos como 1 a los inliers
+      M{i}(idx, 8) = 1; %Marcamos como 1 a los inliers
       newM{i} = M{i}(idx,:);
       acumIdx = acumIdx + length(idx);
       for j = 1:length(idx)
@@ -52,10 +67,6 @@ function [N] = cleanUp(M, fg)
    end
 
 %drop outliers allocation memory
-
-
- 
-
 
 %Busca Coordenadas repetidas
 repeated = cell;
@@ -122,12 +133,27 @@ for i=2:length(idxM)
 end
 idxM=Q;
 
+   % Despues de este for se elimina el campo 1 de cada registro
+   %  y queda entonces así:
+   % campo 1 y 2: Centro de Masa
+   % campo 3: Indice de Frame
+   % campo 4: confianza en el match
+   % campo 5: índice del rasgo (feature)
+   % campo 6: area del rasgo.
+   % campo 7: Inlier (1), o Outlier(0):
+   % campo 8 y 9: Parametrós de la linea que pasa por el rasgo.
+   % campo 10: error.
+   % campo 11 y 12: proyección del centro de masa en la linea a
+   %                la que pertenece.
+   %
+
 nObjects = length(idxM);
 N={};
 for i = 1:nObjects
-   idxF = find (Objs(:,1) == idxM(i));% & Objs(:,8) == 1);
+   idxF = find (Objs(:,1) == idxM(i)) & Objs(:,8) == 1);
    N{i}=Objs(idxF,2:end);
 end
+
 
 figure(fg);
 clf;

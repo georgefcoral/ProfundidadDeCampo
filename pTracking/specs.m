@@ -1,19 +1,18 @@
 
 %Script de mediciones en riel con respecto a una cámara que se desplaza cada cierta cantidad de mm.
 
+littleMesh = 20;   % # de dientes
+bigMesh = 36;      % # de dientes
+
+proportion = 5/9;  % # por cada vuelta de littleMesh se obtiene 5/9 del grande.
+
+xEach10Rev = .005; % Relacion por cada 10 revoluciones existe .5 mm
+                   % de desplazamiento en la riel.
+
+oneRev = 0.053343; % mm de desplazamiento en la riel.
 
 
-littleMesh = 20 % # de dientes
-bigMesh = 36 % # de dientes
-
-proportion = 5/9 % # por cada vuelta de littleMesh se obtiene 5/9 del grande.
-
-xEach10Rev = .005 %Relacion por cada 10 revoluciones existe .5 mm de desplazamiento en la riel.
-
-oneRev = 0.053343 %mm de desplazamiento en la riel.
-
-
-stepping = 100;
+stepping = 100; 
 
 
 shift = stepping * oneRev;% Desplazamiento de la cámara a través de la riel.
@@ -65,9 +64,9 @@ for i = 1:l
    R{i}=zeros(r,7);
 end
 
-dTx = Tv(1)*shift/1000;
-dTy = Tv(2)*shift/1000;
-dTz = Tv(3)*shift/1000;%Incremento de Desplazamiento.
+dTx = Tv(1) * shift / 1000;
+dTy = Tv(2) * shift / 1000;
+dTz = Tv(3) * shift / 1000;%Incremento de Desplazamiento.
 
 for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
     N0{i}(1,4) = 0;
@@ -87,26 +86,28 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
         
 
         % Xw_ = Xw_ / Xw_(3);
-        % Xw = Xw / Xw(3);
+        % Xw  = Xw  / Xw (3);
         if(X(2) - X_(2) != 0 & X(1) - X_(1) != 0)
 
             deltaX = X(1) - X_(1);%u
             deltaY = X(2) - X_(2);%v
 
-            R{i}(j,1) = ((dTz)*(X(1) - pFPix(1)))/ deltaX ;  %Z;
-            R{i}(j,2) =  ((dTz)*(X(2) - pFPix(2)))/ deltaY;   %Z;
-            R{i}(j,3) = N0{i}(j,7); 
-            R{i}(j,4) = N0{i}(j,10); 
-            R{i}(j,5) = R{i}(j,1) + Tz;% Z component
+            R{i}(j,1) = ((dTz)*(X(1) - pFPix(1))) / deltaX;  %Z;
+            R{i}(j,2) = ((dTz)*(X(2) - pFPix(2))) / deltaY;  %Z;
+            R{i}(j,3) = N0{i}(j,  7); 
+            R{i}(j,4) = N0{i}(j, 10); 
+            R{i}(j,5) =  R{i}(j,  1) + Tz;% Z component
 
             Xw  = iK * transpose(X);
-            R{i}(j,6) = Xw(1)*R{i}(j,1) + Tx;
-            R{i}(j,7) = Xw(2)*R{i}(j,1) + Ty ;
+            R{i}(j,6) = Xw(1) * R{i}(j, 1) + Tx;
+            R{i}(j,7) = Xw(2) * R{i}(j, 1) + Ty;
+
           else
+            
             display("Division por cero detectada.")
             N0{i}(j,4) = 0;
             N0{i}(j,7) = Tz;
-          endif
+          end
 
     endfor
 endfor
@@ -121,7 +122,7 @@ for i = 1:s1% de objeto
   Z = median(R{i}(2:end,5));
   X = median(R{i}(2:end,6));
   Y = median(R{i}(2:end,7));
-  plot3(X,Y,Z,'*k')
+  plot3(X,Y,Z,'.k')
 endfor
 
 

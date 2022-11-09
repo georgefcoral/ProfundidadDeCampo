@@ -939,12 +939,23 @@ void getTracking (tempFeatureTable < featDescriptor > &tFeats, int umbralFrame,
               << r << ", " << c << ")" << endl;
          //cout << tFeats.Table[r][c].idxFrame << endl;
          locations[j]=Point2f(tFeats.Table[r][c].mc.x,tFeats.Table[r][c].mc.y);
+         
+         // Cada registro se almacena como un renglon, que contiene los
+         // siguientes campos:
+         // 
+         // campo 0 y 1: Centro de Masa
+         // campo 2: Indice de Frame
+         // campo 3: confianza en el match
+         // campo 4: índice del rasgo (feature)
+         // campo 5: area del rasgo.
+         // campos 6 a quedan si definir/: 
+         
          tracking << tFeats.Table[r][c].mc.x << ","
                   << tFeats.Table[r][c].mc.y << ","
                   << tFeats.Table[r][c].idxFrame << ","
                   << match[i][j] << ","
                   << tFeats.Table[r][c].idxFeat << ", "
-                  << tFeats.Table[r][c].area<< ", "
+                  << tFeats.Table[r][c].area << ", "
                   << 0 << ", "
                   << 0 << ", "
                   << 0 << ", "
