@@ -1,4 +1,4 @@
-function [N] = cleanUp(M, fg)
+function [N] = cleanUp(M, fg, thr)
    % Cuenta cuantos objetos y cuantas coordenadas hay.
    nObjects = length(M);
    nCoors = 0;
@@ -39,31 +39,34 @@ function [N] = cleanUp(M, fg)
       [r, c] = size(M{i});
       %Aplicamos Ransac a las coordenadas del objeto.
       [sol, idx, err] = ransac1(M{i}(:,1), M{i}(:,2), 0.5, .6);
-      M{i}(idx, 8) = 1; %Marcamos como 1 a los inliers
-      newM{i} = M{i}(idx,:);
-      acumIdx = acumIdx + length(idx);
-      for j = 1:length(idx)
-         Objs(row, 1) = i;
-         Objs(row, 2:c+1) = newM{i}(j, :);
-         Objs(row, 9:10) = sol;
-         Objs(row,11) = err;
+      
+      if(err <thr)
+         M{i}(idx, 8) = 1; %Marcamos como 1 a los inliers
+         newM{i} = M{i}(idx,:);
+         acumIdx = acumIdx + length(idx);
+         for j = 1:length(idx)
+            Objs(row, 1) = i;
+            Objs(row, 2:c+1) = newM{i}(j, :);
+            Objs(row, 9:10) = sol;
+            Objs(row,11) = err;
 
-         %Encontrar parámetros de la recta perpendicular a l,
-         m = sol(1);
-         b = sol(2);
+            %Encontrar parámetros de la recta perpendicular a l,
+            m = sol(1);
+            b = sol(2);
 
-         mp = -1/m;
-         bp = -mp*newM{i}(j,1)+newM{i}(j,2);
+            mp = -1/m;
+            bp = -mp*newM{i}(j,1)+newM{i}(j,2);
 
-         %Proyectar la coordenada en la linea estimada (sol)
-         xp = (bp - b)/(m - mp);
-         yp = (m)*xp + b;
-         %Almacenarla en las columnas 12 y 13
-         Objs(row,12) = xp;
-         Objs(row,13) = yp;
+            %Proyectar la coordenada en la linea estimada (sol)
+            xp = (bp - b)/(m - mp);
+            yp = (m)*xp + b;
+            %Almacenarla en las columnas 12 y 13
+            Objs(row,12) = xp;
+            Objs(row,13) = yp;
 
-         row += 1;
-      end
+            row += 1;
+         end
+      endif
    end
 
 %drop outliers allocation memory
@@ -150,7 +153,7 @@ idxM=Q;
 nObjects = length(idxM);
 N={};
 for i = 1:nObjects
-   idxF = find (Objs(:,1) == idxM(i)) & Objs(:,8) == 1);
+   idxF = find (Objs(:,1) == idxM(i)) ;% Objs(:,8) == 1);
    N{i}=Objs(idxF,2:end);
 end
 
@@ -168,3 +171,7 @@ end
 hold off;
 
 
+
+%Trabajos pendientes, realizar las capturar con valores de umbral diferentes... 0.1, 0.2, 0.3 y 0.5.
+
+%

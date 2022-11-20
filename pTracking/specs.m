@@ -38,7 +38,7 @@ pFW = K^-1 * pF
 display(sprintf("Hay %f objetos", length(M)));
 
 % Elimina objetos repetidos
-N0 = cleanUp(M, 1);
+N0 = cleanUp(M, 1, 0.2);
 display(sprintf("Hay %f objetos", length(N0)));
 
 % Elimina objetos repetidos
@@ -99,8 +99,11 @@ for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
             R{i}(j,5) =  R{i}(j,  1) + Tz;% Z component
 
             Xw  = iK * transpose(X);
-            R{i}(j,6) = Xw(1) * R{i}(j, 1) + Tx;
-            R{i}(j,7) = Xw(2) * R{i}(j, 1) + Ty;
+            Xw = Xw / Xw(3);
+            R{i}(j,6) = Xw(1) * R{i}(j, 5) + Tx;%Esta es X
+            R{i}(j,7) = Xw(2) * R{i}(j, 5) + Ty;%Esta es Y
+            %R{i}(j,8) = Xw(1) * R{i}(j, 1) + Tx;%Esta es X
+            %R{i}(j,9) = Xw(2) * R{i}(j, 1) + Ty;%Esta es Y
 
           else
             
@@ -119,10 +122,21 @@ clf
 hold on
 s1=length(R);
 for i = 1:s1% de objeto
-  Z = median(R{i}(2:end,5));
-  X = median(R{i}(2:end,6));
-  Y = median(R{i}(2:end,7));
-  plot3(X,Y,Z,'.k')
+  if(length(R{i})!=0)
+
+
+    % Z = R{i}(2:end,5);
+    % X = R{i}(2:end,6);
+    % Y = R{i}(2:end,7);
+
+
+    Z = median(R{i}(2:end,5));
+    X = median(R{i}(2:end,6));
+    Y = median(R{i}(2:end,7));
+   %Xt = median(R{i}(2:end,8));
+   %Yt = median(R{i}(2:end,9));
+    plot3(X,Y,Z,'.k');%, Xt, Yt, Z, '.r');
+  endif
 endfor
 
 
