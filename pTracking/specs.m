@@ -1,4 +1,4 @@
-
+clf
 %Script de mediciones en riel con respecto a una cámara que se desplaza cada cierta cantidad de mm.
 
 littleMesh = 20;   % # de dientes
@@ -10,12 +10,12 @@ xEach10Rev = .005; % Relacion por cada 10 revoluciones existe .5 mm
                    % de desplazamiento en la riel.
 
 oneRev = 0.053343; % mm de desplazamiento en la riel.
-
+step = 0.000148056*1.8 % (1.8 * oneRev)/360
 
 stepping = 100; 
 
 
-shift = stepping * oneRev;% Desplazamiento de la cámara a través de la riel.
+shift = stepping * step;% Desplazamiento de la cámara a través de la riel.
 
 % Seguimiento de los objetos en el plano de imagen
 % Carga la información de seguimiento de objetos generada por PuntoDeFuga2
@@ -38,9 +38,13 @@ pFW = K^-1 * pF
 display(sprintf("Hay %f objetos", length(M)));
 
 % Elimina objetos repetidos
-N0 = cleanUp(M, 1, 0.2);
+N0 = cleanUp(M, 1, 0.2,pF/pF(3));
 display(sprintf("Hay %f objetos", length(N0)));
-
+%plotResults(N0)
+figure(8)
+for idx=1:length(M)
+  plot(M{idx}(:,1),M{idx}(:,2),'.b')
+endfor
 % Elimina objetos repetidos
 %N1 = cleanUp(N0, 2);
 %display(sprintf("Hay %f objetos", length(N1)));
@@ -117,8 +121,8 @@ endfor
 
 %Plotting objects on 3D coordinates:
 
-figure(3);
-clf
+figure(4);
+
 hold on
 s1=length(R);
 for i = 1:s1% de objeto
@@ -139,6 +143,9 @@ for i = 1:s1% de objeto
   endif
 endfor
 
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
 
 % figure(3);
 % clf

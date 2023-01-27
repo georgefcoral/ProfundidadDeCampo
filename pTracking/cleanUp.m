@@ -1,4 +1,4 @@
-function [N] = cleanUp(M, fg, thr)
+function [N] = cleanUp(M, fg, thr,pf)
    % Cuenta cuantos objetos y cuantas coordenadas hay.
    nObjects = length(M);
    nCoors = 0;
@@ -158,17 +158,19 @@ for i = 1:nObjects
 end
 
 
-figure(fg);
-clf;
-axis equal;
-hold on;
-for i = 1:nObjects
-   idx = find (Objs(:,1) == idxM(i));
-   idxF = find (Objs(:,1) == idxM(i) & Objs(:,8) == 1);
-   %plot(Objs(idx,2), Objs(idx,3), Objs(idxF,2), Objs(idxF,3), 'r');
-   plot(Objs(idxF,2), Objs(idxF,3), 'r');
-end
-hold off;
+% figure(fg);
+% clf;
+% axis equal;
+% hold on;
+% for i = 1:nObjects
+%    idx = find (Objs(:,1) == idxM(i));
+%    idxF = find (Objs(:,1) == idxM(i) & Objs(:,8) == 1);
+%   % plot(Objs(idx,2), Objs(idx,3), Objs(idxF,2), Objs(idxF,3), 'r');
+%    %plot(Objs(idxF,2), Objs(idxF,3), 'r');
+% end
+
+%plot(pf(1),pf(2),'or')
+%hold off;
 
 
 
