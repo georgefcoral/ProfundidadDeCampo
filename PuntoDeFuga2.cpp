@@ -731,7 +731,7 @@ int main (int argc, char **argv)
       }
       Frames.push_back (fD);
       imshow ("contornos", frameRGB);
-   
+      waitKey(0);
       for (i = 0; i < Frames[t].contours.size (); ++i)
       {
          featDescriptor ob (Frames[t], t, i);
