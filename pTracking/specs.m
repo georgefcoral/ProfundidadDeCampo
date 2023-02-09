@@ -123,23 +123,33 @@ endfor
 
 figure(4);
 
+
+%open file identifier
+fid=fopen('model.xyz','w');
+
 hold on
 s1=length(R);
 for i = 1:s1% de objeto
   if(length(R{i})!=0)
 
-
+    
     % Z = R{i}(2:end,5);
     % X = R{i}(2:end,6);
     % Y = R{i}(2:end,7);
 
 
-    Z = median(R{i}(2:end,5));
-    X = median(R{i}(2:end,6));
-    Y = median(R{i}(2:end,7));
+    % Z = median(R{i}(2:end,5));
+    % X = median(R{i}(2:end,6));
+    % Y = median(R{i}(2:end,7));
+    Z = R{i}(2:end,5);
+    X = R{i}(2:end,6);
+    Y = R{i}(2:end,7);
+    %['33.126', '-73', '6.339']
+    ptStr = cstrcat(num2str(X),' ',num2str (Y),' ',num2str (Z),'\n')   
+    fprintf(fid,ptStr);
    %Xt = median(R{i}(2:end,8));
    %Yt = median(R{i}(2:end,9));
-    plot3(X,Y,Z,'.k');%, Xt, Yt, Z, '.r');
+    %plot3(X,Y,Z,'.k');%, Xt, Yt, Z, '.r');
   endif
 endfor
 
@@ -147,25 +157,5 @@ xlabel('X');
 ylabel('Y');
 zlabel('Z');
 
-% figure(3);
-% clf
-% hold on
-% for i = 1:l% de objeto
-%   [s1,s2]=size(R{i});
-%   Z = zeros(s1,1);
-%   for j = 2:s1%indice por cada objeto
-%     XObj = R{i}(j,6); 
-%     YObj = R{i}(j,7); 
-%     ZObj = R{i}(j,5); 
-%     Z(j-1) = ZObj;
-%     %display ([mean(XObj), mean(YObj), mean(ZObj)])
-%     %plot3(XObj, YObj, ZObj,'r*')
-%   endfor
-%   plot(i,median(Z),'b*')
-%   pause()
-% endfor
-
-
-
-
+fclose(fid)
 
