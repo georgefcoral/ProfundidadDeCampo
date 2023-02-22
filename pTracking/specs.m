@@ -21,11 +21,14 @@ shift = stepping * step;% Desplazamiento de la cámara a través de la riel.
 % Carga la información de seguimiento de objetos generada por PuntoDeFuga2
 % La información consiste de una celda N0, que contiene las coordenadas de cada
 % uno de los objetos encontrados.
-tracking;
 
+%tracking;
+% run("./Models/1/tracking.m") 
+% run("./Models/2/tracking.m") 
+run("./Models/3/tracking.m") 
+%run("./Models/4/tracking.m") 
+%run("./Models/5/tracking.m") 
 
-% Carga el punto de fuga.
-puntoDeFugaH
 
 %Matriz de calibración K 
 K = [[1743,0,354];[0,1743,233];[0,0,1]]
@@ -38,13 +41,15 @@ pFW = K^-1 * pF
 display(sprintf("Hay %f objetos", length(M)));
 
 % Elimina objetos repetidos
-N0 = cleanUp(M, 1, 0.2,pF/pF(3));
+N0 = cleanUp(M, 1, 0.3,pF/pF(3));
+
+save("N0.mat","N0")
 display(sprintf("Hay %f objetos", length(N0)));
 %plotResults(N0)
-figure(8)
-for idx=1:length(M)
-  plot(M{idx}(:,1),M{idx}(:,2),'.b')
-endfor
+
+% for idx=1:length(M)
+%   plot(M{idx}(:,1),M{idx}(:,2),'.b')
+% endfor
 % Elimina objetos repetidos
 %N1 = cleanUp(N0, 2);
 %display(sprintf("Hay %f objetos", length(N1)));
@@ -61,101 +66,56 @@ Zs = zeros(l,3);
 
 iK = inv(K);
 
-%%Creamos una celda para almacenar resultados.
-R={};
-for i = 1:l
-   [r,c] = size(N0{i});
-   R{i}=zeros(r,7);
-end
 
-dTx = Tv(1) * shift / 1000;
-dTy = Tv(2) * shift / 1000;
-dTz = Tv(3) * shift / 1000;%Incremento de Desplazamiento.
-
-for i = 1 : l%Aquí tenemos el # del objeto que contiene su trayectoria.
-    N0{i}(1,4) = 0;
-    
-    s=size(N0{i});
-    for j = 2 : s(1)  %Aquí recorremos la trayectoria por cada objeto.
-
-
-
-          Tx = dTx * N0{i}(j,3);
-          Ty = dTy * N0{i}(j,3);
-          Tz = dTz * N0{i}(j,3);%Desplazamiento absoluto con respecto al primer cuadro.
-
-
-          X_ = [N0{i}(j-1,11), N0{i}(j-1,12),1];%Aquí la j-esima coordenada del i-esimo objeto anterior.
-          X = [N0{i}(j,11), N0{i}(j,12),1];%Aquí la j-esima coordenada del i-esimo objeto.
-        
-
-        % Xw_ = Xw_ / Xw_(3);
-        % Xw  = Xw  / Xw (3);
-        if(X(2) - X_(2) != 0 & X(1) - X_(1) != 0)
-
-            deltaX = X(1) - X_(1);%u
-            deltaY = X(2) - X_(2);%v
-
-            R{i}(j,1) = ((dTz)*(X(1) - pFPix(1))) / deltaX;  %Z;
-            R{i}(j,2) = ((dTz)*(X(2) - pFPix(2))) / deltaY;  %Z;
-            R{i}(j,3) = N0{i}(j,  7); 
-            R{i}(j,4) = N0{i}(j, 10); 
-            R{i}(j,5) =  R{i}(j,  1) + Tz;% Z component
-
-            Xw  = iK * transpose(X);
-            Xw = Xw / Xw(3);
-            R{i}(j,6) = Xw(1) * R{i}(j, 5) + Tx;%Esta es X
-            R{i}(j,7) = Xw(2) * R{i}(j, 5) + Ty;%Esta es Y
-            %R{i}(j,8) = Xw(1) * R{i}(j, 1) + Tx;%Esta es X
-            %R{i}(j,9) = Xw(2) * R{i}(j, 1) + Ty;%Esta es Y
-
-          else
-            
-            display("Division por cero detectada.")
-            N0{i}(j,4) = 0;
-            N0{i}(j,7) = Tz;
-          end
-
-    endfor
-endfor
+R = find3DCoords(N0,l,Tv,iK,shift,pFPix,stepping,step)
 
 %Plotting objects on 3D coordinates:
 
-figure(4);
+
+plotting3D(R,3,pFW)
 
 
-%open file identifier
-fid=fopen('model.xyz','w');
+% %open file identifier
+% fid=fopen('model.xyz','w');
+% fod = fopen('modelDetalled.xyz','w');
 
-hold on
-s1=length(R);
-for i = 1:s1% de objeto
-  if(length(R{i})!=0)
+% hold on
+% axis equal
+% s1=length(R);
+% for i = 1:s1% de objeto
+%   if(length(R{i})!=0)
 
-    
-    % Z = R{i}(2:end,5);
-    % X = R{i}(2:end,6);
-    % Y = R{i}(2:end,7);
+%     % Z = R{i}(2:end,5);
+%     % X = R{i}(2:end,6);
+%     % Y = R{i}(2:end,7);
+
+%     Z = median(R{i}(2:end,5));
+%     X = median(R{i}(2:end,6));
+%     Y = median(R{i}(2:end,7));
+%     ZE = R{i}(2:end,5);
+%     XE = R{i}(2:end,6);
+%     YE = R{i}(2:end,7);
+%     %['33.126', '-73', '6.339']
+%     ptStr = cstrcat(num2str(X),' ',num2str (Y),' ',num2str (Z),'\n')
+%     for j = 1:length(XE)
+%       ptStr2 = cstrcat(num2str(XE(j)),' ',num2str (YE(j)),' ',num2str (ZE(j)),'\n')
+%       fprintf(fod,ptStr2);
+%     endfor   
+%     fprintf(fid,ptStr);
+%    %Xt = median(R{i}(2:end,8));
+%    %Yt = median(R{i}(2:end,9));
+%     plot3(XE,YE,ZE,'.k');%, Xt, Yt, Z, '.r');
+%   endif
+% endfor
+
+% xlabel('X');
+% ylabel('Y');
+% zlabel('Z');
+
+% fclose(fod)
+% fclose(fid)
 
 
-    % Z = median(R{i}(2:end,5));
-    % X = median(R{i}(2:end,6));
-    % Y = median(R{i}(2:end,7));
-    Z = R{i}(2:end,5);
-    X = R{i}(2:end,6);
-    Y = R{i}(2:end,7);
-    %['33.126', '-73', '6.339']
-    ptStr = cstrcat(num2str(X),' ',num2str (Y),' ',num2str (Z),'\n')   
-    fprintf(fid,ptStr);
-   %Xt = median(R{i}(2:end,8));
-   %Yt = median(R{i}(2:end,9));
-    %plot3(X,Y,Z,'.k');%, Xt, Yt, Z, '.r');
-  endif
-endfor
 
-xlabel('X');
-ylabel('Y');
-zlabel('Z');
 
-fclose(fid)
 

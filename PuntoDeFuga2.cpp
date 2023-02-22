@@ -731,7 +731,7 @@ int main (int argc, char **argv)
       }
       Frames.push_back (fD);
       imshow ("contornos", frameRGB);
-      waitKey(0);
+      // waitKey(100);
       for (i = 0; i < Frames[t].contours.size (); ++i)
       {
          featDescriptor ob (Frames[t], t, i);
@@ -740,17 +740,17 @@ int main (int argc, char **argv)
       tFeats.addDescriptors (objs, t);
       tempTableView.refresh(tFeats);
       imshow("Table View", tempTableView.imgView);
-      waitKey (30);
+      // waitKey (100);
       tFeats.incIdx ();
       t++;
    }
    tFeats.printGrid ();
    tempTableView.drawSquare(10,15,true);
    imshow("Table View", tempTableView.imgView);
-   waitKey (0);
+   // waitKey (100);
    tempTableView.drawSquare(10,15,false);
    imshow("Table View", tempTableView.imgView);
-   waitKey (30);
+   // waitKey (100);
 
    cout << " tFeats.maxSeq: " << tFeats.maxSeq << endl;
    cout << " tFeats.maxElements " << tFeats.maxElements << endl;
