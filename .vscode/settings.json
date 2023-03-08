@@ -6,6 +6,7 @@
         "new": "cpp",
         "iosfwd": "cpp",
         "fstream": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "*.tcc": "cpp"
     }
 }

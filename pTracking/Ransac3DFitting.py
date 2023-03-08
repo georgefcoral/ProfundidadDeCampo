@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pyransac3d as pyrsc
+import math
 
 UMBRAL = 0;
 def distance(p,eq):
@@ -103,8 +104,8 @@ data3d = points[inliers]
 #Datos extraidos del experimento.
 #Leemos archivo XYZ para convertirlo a un numpy array.
 
-#modelName = 'model.xyz'
-modelName = 'modelDetalled.xyz'
+modelName = 'model.xyz'
+#modelName = 'modelDetalled.xyz'
 xyzM = open(modelName,'r')
 cont = 0
 arrayPointsM = []
@@ -113,7 +114,7 @@ for pointM in xyzM:
     pM = pointM.rstrip('\n')
     pointSM = pM.split(" ")
     #print(pointSM)
-    if(float(pointSM[2])>0 and float(pointSM[2])<.30 ):
+    if(float(pointSM[2])>0 and float(pointSM[2])<.05 ):
         cont =cont+1
         arrayPointsM.append(pointSM)
 
@@ -121,44 +122,36 @@ xyzM.close()
 pointsM = np.zeros((cont, 3))
 
 for i in range(0,cont):
-    arr = [float(arrayPointsM[i][0])*10,float(arrayPointsM[i][1])*10,float(arrayPointsM[i][2])*10]
+    arr = [float(arrayPointsM[i][0])*100,float(arrayPointsM[i][1])*100,float(arrayPointsM[i][2])*100]
+    print(arr)
     pointsM[i] = np.array(arr)
 
 
 sphereE = pyrsc.Sphere()
 
-
-# plot3D(pointsM,np.zeros((1,3)))
-
-#centerE, radiusE, inliersE = sphereE.fit(pointsM, thresh=0.1,maxIteration=1000)
-
-# print("Radius for estimed cloud points: ",radiusE)
-
-# print("Center of sphere estimed: ", centerE)
-
-# print("Total of inliers: ",len(inliersE))
-
-# data3dE = pointsM[inliersE]
-
 plot3D(pointsM,pF)
 
-# filtering, index = np.where(np.logical_and(pointsM>.50,pointsM<=.6))
-filtering, index = np.where(np.logical_and(pointsM>.18,pointsM<=.2))
-print(" Filtering >> ", filtering)
-print(" Index >> ", index)
+#filtering, index = np.where(np.logical_and(pointsM>.04,pointsM<=.5))
+filtro = (pointsM[:,2]<.60) & (pointsM[:,2]>=.40)
+# filtering, index = np.where(np.logical_and(pointsM>.3,pointsM<=.2))
+#print(" Filtering >> ", filtering)
+#print(" Index >> ", index)
 ITERA = 100
 dist = 0
+d = 0
 for i in range(ITERA):
     plane = pyrsc.Plane()
-    equation, inliers = plane.fit(pointsM[filtering], thresh=0.5, minPoints=10, maxIteration=1000)
-    print("Equation ",equation)
+    equation, inliers = plane.fit(pointsM[filtro], thresh=0.4, minPoints=10, maxIteration=100)
+
+    #Encontramos el plano que corta únicamente al eje Z
+
     print("pf: ",pF)
-    print(len(inliers))
+    # print(len(inliers))
     # print("Pts[inliers]",data3dE[inliers])
     # print("Pts[inliers]",len(data3dE[inliers]))
-    d = distance(pF,equation)
+    d = abs(pF[0][2]*100-equation[3])
     dist =dist + d 
     print("Distancia: ",d)
 
-print("Promedio de distancias >> ", (dist/ITERA)*100)
+print("Promedio de distancias >> ", (dist/ITERA))
 

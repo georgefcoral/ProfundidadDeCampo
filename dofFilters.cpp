@@ -13,6 +13,8 @@
 #include <random>
 #include <iomanip>
 #include <unistd.h>
+#include <cstdio>
+#include <cstring>
 
 using namespace cv;
 using namespace std;
@@ -288,14 +290,23 @@ double energyL(Mat input, Mat& dst)
 
 int main(int argc, char **argv)
 {
+
+   char buff[256];
+   int cont = 0;
    if (argc < 2)
    {
-       cerr << "Faltan Parámetros:\n\n\tUso: ./ejecutableFocusingMeasures path_images \n\n";
+       cerr << "Faltan Parámetros:\n\n\tUso: ./ejecutableFocusingMeasures names.txt \n\n";
        cerr << endl; 
       exit (1);
     }
    String image_path = String (argv[1]);
-   Mat img = imread(image_path, IMREAD_GRAYSCALE);
+   ifstream infile;
+   infile.open (image_path);
+   while (getline (infile, file))
+   {
+
+
+   Mat img = imread(file, IMREAD_GRAYSCALE);
    if(img.empty())
    {
         std::cout << "Could not read the image: " << image_path << std::endl;
@@ -305,11 +316,11 @@ int main(int argc, char **argv)
    Mat dst;
    double temp = TSobel(img,dst,1);
    cout<<dst.type()<<endl;
-   namedWindow("Frame", WINDOW_NORMAL);
-   imshow("Frame",dst);
-   waitKey(0);
-   destroyWindow ("Frame");
-
+   snprintf(buff,255,"./news/%04d.png",cont);
+   imwrite(buff, dst);
+   waitKey(100);
+   cont++;
+   }
 return 0;
 }
 
